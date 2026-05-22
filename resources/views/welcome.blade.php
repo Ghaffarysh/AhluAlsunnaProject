@@ -176,12 +176,7 @@
             <a href="/lessons" class="welcome-qpanel__more">الكل</a>
           </div>
           <ul class="welcome-qpanel__list">
-            @foreach([
-              ['شرح كتاب التوحيد — الدرس ٣','aqeedah','عقيدة','منذ يوم',   '١٢٠'],
-              ['أحكام صلاة الجماعة ومسائلها','fiqh',   'فقه',  'منذ يومين','٨٧' ],
-              ['مصطلح الحديث — المقدمة',      'hadith', 'حديث', 'منذ ٣ أيام','٢١٤'],
-              ['تفسير البقرة الآيات ١-٥',     'tafsir', 'تفسير','منذ أسبوع','٣٤١'],
-            ] as [$t,$secId,$secLabel,$ago,$v])
+            @foreach([['شرح كتاب التوحيد — الدرس ٣','aqeedah','عقيدة','منذ يوم','١٢٠'], ['أحكام صلاة الجماعة ومسائلها','fiqh','فقه','منذ يومين','٨٧'], ['مصطلح الحديث — المقدمة','hadith','حديث','منذ ٣ أيام','٢١٤'], ['تفسير البقرة الآيات ١-٥','tafsir','تفسير','منذ أسبوع','٣٤١']] as [$t,$secId,$secLabel,$ago,$v])
               <li>
                 <a href="#" class="welcome-qpanel__item">
                   <div class="welcome-qpanel__item-dot"></div>
@@ -215,12 +210,7 @@
             <a href="/fatwas" class="welcome-qpanel__more">الكل</a>
           </div>
           <ul class="welcome-qpanel__list">
-            @foreach([
-              ['حكم قراءة القرآن من الهاتف بلا وضوء','fiqh',  'فقه'  ],
-              ['هل تجب الزكاة على مال الأطفال؟',       'fiqh',  'فقه'  ],
-              ['حكم الصلاة خلف الإمام الفاسق',         'fiqh',  'فقه'  ],
-              ['حكم الاحتفال بالمولد النبوي الشريف',   'aqeedah','عقيدة'],
-            ] as [$t,$secId,$secLabel])
+            @foreach([['حكم قراءة القرآن من الهاتف بلا وضوء','fiqh','فقه'], ['هل تجب الزكاة على مال الأطفال؟','fiqh','فقه'], ['حكم الصلاة خلف الإمام الفاسق','fiqh','فقه'], ['حكم الاحتفال بالمولد النبوي الشريف','aqeedah','عقيدة']] as [$t,$secId,$secLabel])
               <li>
                 <a href="#" class="welcome-qpanel__item">
                   <div class="welcome-qpanel__item-dot welcome-qpanel__item-dot--fatwa"></div>

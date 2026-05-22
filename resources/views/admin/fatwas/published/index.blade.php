@@ -64,7 +64,7 @@
               <label class="dash-label">التصنيف</label>
               <select class="dash-select">
                 <option value="">اختر التصنيف...</option>
-                @foreach(['عقيدة','فقه','معاملات','أسرة','أخلاق']) as $t)
+                @foreach(['عقيدة','فقه','معاملات','أسرة','أخلاق'] as $t)
                   <option>{{ $t }}</option>
                 @endforeach
               </select>

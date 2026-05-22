@@ -78,11 +78,7 @@
         </div>
 
         <div class="login-brand__stats">
-          @foreach([
-            ['٢٠٤٨', 'درساً منشوراً'],
-            ['٥٢٣',  'فتوى موثّقة'],
-            ['٨٩',   'كتاباً في المكتبة'],
-          ] as [$num, $label])
+          @foreach([['٢٠٤٨', 'درساً منشوراً'], ['٥٢٣', 'فتوى موثّقة'], ['٨٩', 'كتاباً في المكتبة']] as [$num, $label])
             <div class="login-brand__stat">
               <span class="login-brand__stat-num">{{ $num }}</span>
               <span class="login-brand__stat-label">{{ $label }}</span>
