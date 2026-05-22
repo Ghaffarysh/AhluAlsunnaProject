@@ -1,9 +1,11 @@
 FROM php:8.4-fpm
 
 RUN apt-get update && apt-get install -y \
-    git curl libpng-dev libonig-dev libxml2-dev zip unzip nodejs npm
+    git curl libpng-dev libonig-dev libxml2-dev \
+    zip unzip nodejs npm libpq-dev
 
-RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
+# pgsql بدل mysql
+RUN docker-php-ext-install pdo pdo_pgsql mbstring exif pcntl bcmath gd
 
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
@@ -16,16 +18,14 @@ COPY . .
 RUN composer install --no-dev --optimize-autoloader
 RUN npm install && npm run build
 
-# أنشئ ملف SQLite فارغ داخل الـ image
-RUN mkdir -p /var/www/database && touch /var/www/database/database.sqlite
-
-RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache /var/www/database
+RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
 
 COPY docker/nginx.conf /etc/nginx/sites-available/default
 
 EXPOSE 80
 
-CMD php artisan config:cache && \
+CMD php artisan config:clear && \
+    php artisan config:cache && \
     php artisan route:cache && \
     php artisan view:cache && \
     php artisan migrate --force && \
