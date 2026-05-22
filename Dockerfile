@@ -1,30 +1,37 @@
-FROM node:22 AS node
+FROM php:8.4-fpm
 
-WORKDIR /app
-
-COPY package*.json ./
-
-RUN npm install
-
-COPY . .
-
-RUN npm run build
-
-
-FROM php:8.4-cli
-
-WORKDIR /app
-
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
-    unzip curl git zip libpq-dev \
-    && docker-php-ext-install pdo pdo_pgsql
+    git curl libpng-dev libonig-dev libxml2-dev zip unzip nodejs npm
 
+# Install PHP extensions
+RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
+
+# Install Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+# Install Nginx
+RUN apt-get install -y nginx
+
+WORKDIR /var/www
+
+# Copy project
 COPY . .
 
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
-
+# Install dependencies
 RUN composer install --no-dev --optimize-autoloader
+RUN npm install && npm run build
 
-COPY --from=node /app/public/build ./public/build
+# Permissions
+RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
 
-CMD php artisan serve --host=0.0.0.0 --port=$PORT
+# Copy Nginx config
+COPY docker/nginx.conf /etc/nginx/sites-available/default
+
+EXPOSE 80
+
+CMD php artisan config:cache && \
+    php artisan route:cache && \
+    php artisan view:cache && \
+    php-fpm -D && \
+    nginx -g "daemon off;"
