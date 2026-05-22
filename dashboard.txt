@@ -1,0 +1,3859 @@
+==================================================
+FILE: \resources\views\admin\activity-log\index.blade.php
+==================================================
+
+{{-- {-- resources/views/admin/activity-log/index.blade.php --} --}}
+@extends('layouts.dashboard')
+@section('title', 'سجل النشاط')
+@section('breadcrumb')
+  <span class="dash-breadcrumb__sep">‹</span>
+  <span class="dash-breadcrumb__current">سجل النشاط</span>
+@endsection
+@section('content')
+<div x-data="{ tableQuery: '', activeUser: 'الكل', activeType: 'الكل', dateFrom: '', dateTo: '' }">
+
+  <div class="dash-page-header">
+    <div class="dash-page-header__text">
+      <h1 class="dash-page-header__title">سجل النشاط</h1>
+      <p class="dash-page-header__sub">كل العمليات المُنفَّذة في لوحة التحكم — للمراجعة والمساءلة. للقراءة فقط.</p>
+    </div>
+    <div class="dash-page-header__actions">
+      <button class="dash-btn dash-btn--outline dash-btn--sm">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        تصدير CSV
+      </button>
+    </div>
+  </div>
+
+  {{-- Filter bar --}}
+  <div class="dash-section-card" style="margin-bottom:1.25rem">
+    <div class="dash-section-card__body" style="padding:.875rem 1.125rem">
+      <div style="display:flex;align-items:center;gap:.875rem;flex-wrap:wrap">
+
+        {{-- User filter --}}
+        <div class="dash-field" style="margin:0;min-width:180px;flex:1;max-width:220px">
+          <select class="dash-select" style="min-height:38px" x-model="activeUser">
+            <option>الكل</option>
+            <option>محمد العدني</option>
+            <option>أحمد المنصوري</option>
+            <option>خالد السالم</option>
+          </select>
+        </div>
+
+        {{-- Type filter --}}
+        <div class="dash-field" style="margin:0;min-width:160px;flex:1;max-width:200px">
+          <select class="dash-select" style="min-height:38px" x-model="activeType">
+            <option>الكل</option>
+            <option>إضافة</option>
+            <option>تعديل</option>
+            <option>حذف</option>
+            <option>نشر</option>
+            <option>تعطيل</option>
+          </select>
+        </div>
+
+        {{-- Date range --}}
+        <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+          <input type="date" class="dash-input" style="min-height:38px;width:150px;padding:7px 10px" x-model="dateFrom">
+          <span style="font-size:.78rem;color:var(--text-muted-day)">إلى</span>
+          <input type="date" class="dash-input" style="min-height:38px;width:150px;padding:7px 10px" x-model="dateTo">
+        </div>
+
+        <span class="dash-table-count" style="margin-right:auto">
+          يُعرض: <strong>١٢٠</strong> سجل
+        </span>
+
+      </div>
+    </div>
+  </div>
+
+  {{-- Table --}}
+  <div class="dash-table-wrap">
+    <div class="dash-table-desktop">
+      <table class="dash-table">
+        <thead>
+          <tr>
+            <th>المستخدم</th>
+            <th>الدور</th>
+            <th>العملية</th>
+            <th>المحتوى المتأثر</th>
+            <th>الوقت</th>
+          </tr>
+        </thead>
+        <tbody>
+          @php $logs = [
+            ['محمد العدني',    'Super Admin',   'add',     'أضاف درساً:',    'شرح الأصول — الدرس ٣',                   'الآن'],
+            ['أحمد المنصوري', 'General Admin', 'publish', 'نشر فتوى:',       'حكم قراءة القرآن من الهاتف',             'منذ ٢٠ دقيقة'],
+            ['خالد السالم',   'Admin',         'edit',    'عدّل مقرراً:',    'العقيدة الواسطية',                       'منذ ساعة'],
+            ['خالد السالم',   'Admin',         'add',     'أضاف خطبة:',      'التوحيد وأنواعه الثلاثة',               'منذ ٣ ساعات'],
+            ['فاطمة الزهراء', 'Admin',         'add',     'أضافت كتاباً:',   'الأربعون النووية — طبعة جديدة',          'أمس ١٠:٢٢'],
+            ['محمد العدني',   'Super Admin',   'delete',  'حذف مستخدم:',    'حساب عبد الله الحربي',                   'أمس ٩:١٥'],
+            ['أحمد المنصوري', 'General Admin', 'reject',  'رفض رداً:',       'رد غير موثّق على شبهة الإرث',           'أمس ٨:٠٠'],
+          ]; @endphp
+
+          @foreach($logs as [$user,$role,$type,$action,$target,$time])
+            @php
+              $typeConfig = [
+                'add'     => ['icon'=>'<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',         'bg'=>'rgba(61,122,80,0.1)',   'color'=>'#3d7a50',  'label'=>'إضافة'],
+                'edit'    => ['icon'=>'<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>',
+                              'bg'=>'rgba(4,95,114,0.1)',    'color'=>'var(--primary)', 'label'=>'تعديل'],
+                'delete'  => ['icon'=>'<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>',  'bg'=>'rgba(192,57,43,0.1)',  'color'=>'#c0392b',  'label'=>'حذف'],
+                'publish' => ['icon'=>'<polyline points="20 6 9 17 4 12"/>',                                                      'bg'=>'rgba(177,147,70,0.1)', 'color'=>'#8a6a28',  'label'=>'نشر'],
+                'reject'  => ['icon'=>'<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',            'bg'=>'rgba(192,57,43,0.08)', 'color'=>'#c0392b',  'label'=>'رفض'],
+              ][$type] ?? ['icon'=>'','bg'=>'','color'=>'','label'=>$type];
+            @endphp
+            <tr>
+              <td>
+                <div style="display:flex;align-items:center;gap:9px">
+                  <div style="width:30px;height:30px;border-radius:8px;background:rgba(4,95,114,0.1);color:var(--primary);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.78rem;flex-shrink:0">
+                    {{ mb_substr($user,0,1,'UTF-8') }}
+                  </div>
+                  <span style="font-size:.85rem;font-weight:500;color:var(--text-day)">{{ $user }}</span>
+                </div>
+              </td>
+              <td style="font-size:.78rem;color:var(--text-muted-day)">{{ $role }}</td>
+              <td>
+                <div style="display:inline-flex;align-items:center;gap:6px;padding:3px 9px;border-radius:100px;background:{{ $typeConfig['bg'] }};color:{{ $typeConfig['color'] }}">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                       stroke-linecap="round">{!! $typeConfig['icon'] !!}</svg>
+                  <span style="font-size:.72rem;font-weight:700">{{ $typeConfig['label'] }}</span>
+                </div>
+              </td>
+              <td>
+                <span style="font-size:.79rem;color:var(--text-muted-day)">{{ $action }}</span>
+                <span style="font-size:.84rem;font-weight:500;color:var(--text-day)"> {{ $target }}</span>
+              </td>
+              <td style="font-size:.78rem;color:var(--text-muted-day);white-space:nowrap">{{ $time }}</td>
+            </tr>
+          @endforeach
+        </tbody>
+      </table>
+    </div>
+
+    {{-- Mobile: activity list style --}}
+    <div class="dash-table-mobile" style="padding:.5rem 0">
+      <ul class="dash-activity-list" style="padding:0 1rem">
+        @foreach([['محمد العدني','أضاف درساً: شرح الأصول — الدرس ٣','add','الآن'],['أحمد المنصوري','نشر فتوى: حكم قراءة القرآن','publish','منذ ٢٠ دقيقة'],['خالد السالم','عدّل مقرر: العقيدة الواسطية','edit','منذ ساعة']] as [$u,$t,$type,$time])
+          <li class="dash-activity-item">
+            <div class="dash-activity-item__icon dash-activity-item__icon--{{ $type }}">
+              @if($type==='add')
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              @elseif($type==='edit')
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              @else
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+              @endif
+            </div>
+            <div class="dash-activity-item__body">
+              <p class="dash-activity-item__text"><strong>{{ $u }}</strong> — {{ $t }}</p>
+              <p class="dash-activity-item__time">{{ $time }}</p>
+            </div>
+          </li>
+        @endforeach
+      </ul>
+    </div>
+
+    {{-- Pagination --}}
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:.875rem 1.125rem;border-top:1px solid var(--border-day)">
+      <button class="dash-btn dash-btn--ghost dash-btn--sm">السابق</button>
+      <span style="font-size:.78rem;color:var(--text-muted-day)">صفحة ١ من ١٢</span>
+      <button class="dash-btn dash-btn--ghost dash-btn--sm">التالي</button>
+    </div>
+  </div>
+
+</div>
+@endsection
+
+
+
+==================================================
+FILE: \resources\views\admin\categories\index.blade.php
+==================================================
+
+{{-- resources/views/admin/categories/index.blade.php --}}
+@extends('layouts.dashboard')
+@section('title', 'التصنيفات')
+@section('breadcrumb')
+  <span class="dash-breadcrumb__sep">‹</span>
+  <span class="dash-breadcrumb__current">التصنيفات</span>
+@endsection
+
+@section('content')
+<div x-data="categoriesPage()">
+
+  <div class="dash-page-header">
+    <div class="dash-page-header__text">
+      <h1 class="dash-page-header__title">إدارة التصنيفات</h1>
+      <p class="dash-page-header__sub">تصنيفات المقررات والفتاوى والردود والخطب وأنواع الكتب</p>
+    </div>
+    <div class="dash-page-header__actions">
+      <button class="dash-btn dash-btn--primary" @click="showForm = !showForm">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        <span x-text="showForm ? 'إخفاء النموذج' : 'إضافة تصنيف'"></span>
+      </button>
+    </div>
+  </div>
+
+  {{-- Tabs --}}
+  <div class="dash-section-card">
+    <div class="dash-tabs">
+      @php $tabs = [
+        'curricula'   => 'تخصصات المقررات',
+        'fatwas'      => 'تصنيفات الفتاوى',
+        'refutations' => 'تصنيفات الردود',
+        'sermons'     => 'تصنيفات الخطب',
+        'books'       => 'أنواع الكتب',
+      ]; @endphp
+      @foreach($tabs as $id => $label)
+        <button class="dash-tab"
+                :class="activeTab === '{{ $id }}' ? 'dash-tab--active' : ''"
+                @click="activeTab = '{{ $id }}'">
+          {{ $label }}
+        </button>
+      @endforeach
+    </div>
+
+    <div style="padding:1.25rem">
+
+      {{-- Add form --}}
+      <div x-show="showForm" x-transition style="margin-bottom:1.25rem">
+        <div class="dash-form-card">
+          <div class="dash-form-card__header">
+            <h2 class="dash-form-card__title">إضافة تصنيف جديد</h2>
+          </div>
+          <form method="POST" action="#">
+            @csrf
+            <div class="dash-form-card__body">
+              <div class="dash-field__row">
+                <div class="dash-field">
+                  <label class="dash-label">اسم التصنيف <span style="color:#c0392b;font-size:.72rem">*</span></label>
+                  <input type="text" class="dash-input" placeholder="مثال: عقيدة" required>
+                </div>
+                <div class="dash-field">
+                  <label class="dash-label">اللون المميز</label>
+                  <input type="color" class="dash-input" value="#045f72" style="height:44px;padding:4px 8px">
+                </div>
+              </div>
+            </div>
+            <div class="dash-form-card__footer">
+              <button type="button" class="dash-btn dash-btn--ghost" @click="showForm=false">إلغاء</button>
+              <button type="submit" class="dash-btn dash-btn--primary">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+                حفظ
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      {{-- Categories table --}}
+      @php
+      $allCategories = [
+        'curricula'   => [
+          [1,'عقيدة',   '#045f72', 124],
+          [2,'فقه',     '#3d7a50', 98],
+          [3,'حديث',    '#b19346', 76],
+          [4,'تفسير',   '#6e4682', 44],
+          [5,'لغة',     '#3c648c', 31],
+          [6,'أخلاق',   '#7a4d8c', 58],
+        ],
+        'fatwas'      => [[7,'عقيدة','#045f72',210],[8,'فقه','#3d7a50',184],[9,'معاملات','#3c648c',96],[10,'أسرة','#6e4682',74],[11,'أخلاق','#7a4d8c',58]],
+        'refutations' => [[12,'الردود على البدع','#045f72',48],[13,'الفرق الضالة','#7a4d8c',37],[14,'الشبهات','#3d7a50',52],[15,'الإلحاد','#3c648c',34],[16,'الفتن المعاصرة','#b19346',29]],
+        'sermons'     => [[17,'عقيدة','#045f72',87],[18,'فقه','#3d7a50',64],[19,'أخلاق','#7a4d8c',93],[20,'أحداث معاصرة','#b19346',41]],
+        'books'       => [[21,'متن','#045f72',34],[22,'شرح','#3d7a50',28],[23,'مرجع','#6e4682',18],[24,'رسالة','#b19346',9]],
+      ];
+      @endphp
+
+      @foreach($allCategories as $tabId => $categories)
+        <div x-show="activeTab === '{{ $tabId }}'">
+          <table class="dash-table" style="border:1px solid var(--border-day);border-radius:10px;overflow:hidden">
+            <thead>
+              <tr>
+                <th>اسم التصنيف</th>
+                <th>اللون</th>
+                <th>عدد العناصر</th>
+                <th style="width:100px"></th>
+              </tr>
+            </thead>
+            <tbody>
+              @foreach($categories as [$id,$name,$color,$count])
+              <tr data-row-id="{{ $id }}">
+                <td>
+                  <div style="display:flex;align-items:center;gap:10px">
+                    <span style="width:12px;height:12px;border-radius:50%;background:{{ $color }};flex-shrink:0;box-shadow:0 0 0 3px {{ $color }}22"></span>
+                    <span style="font-size:.86rem;font-weight:500;color:var(--text-day)">{{ $name }}</span>
+                  </div>
+                </td>
+                <td>
+                  <code style="font-size:.75rem;color:var(--text-muted-day);background:var(--bg-day);
+                                padding:2px 7px;border-radius:5px;border:1px solid var(--border-day)">
+                    {{ $color }}
+                  </code>
+                </td>
+                <td style="font-size:.88rem;font-weight:700;color:var(--text-day)">{{ $count }}</td>
+                <td>
+                  <div class="dash-row-actions">
+                    <button type="button" class="dash-btn--edit"
+                            @click="$dispatch('open-edit', {
+                              id: {{ $id }},
+                              title: '{{ addslashes($name) }}',
+                              fields: [
+                                { label:'اسم التصنيف', name:'name', type:'text', value:'{{ addslashes($name) }}' },
+                                { label:'اللون المميز', name:'color', type:'color', value:'{{ $color }}' }
+                              ]
+                            })">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                      </svg>
+                      تعديل
+                    </button>
+                    <button type="button" class="dash-btn--delete"
+                            @click="$dispatch('open-delete',{id:{{ $id }},name:'{{ addslashes($name) }}'})">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                           stroke-width="2" stroke-linecap="round">
+                        <polyline points="3 6 5 6 21 6"/>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
+                      </svg>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              @endforeach
+            </tbody>
+          </table>
+        </div>
+      @endforeach
+
+    </div>
+  </div>
+
+  <x-dashboard.edit-panel formAction="/admin/categories" />
+  <x-dashboard.confirm-delete-modal />
+
+</div>
+
+<script>
+function categoriesPage() {
+  return { showForm: false, activeTab: 'curricula' }
+}
+</script>
+@endsection
+
+
+
+==================================================
+FILE: \resources\views\admin\curricula\index.blade.php
+==================================================
+
+{{-- resources/views/admin/curricula/index.blade.php --}}
+@extends('layouts.dashboard')
+@section('title', 'إدارة المقررات العلمية')
+@section('breadcrumb')
+  <span class="dash-breadcrumb__sep">‹</span>
+  <span class="dash-breadcrumb__current">المقررات العلمية</span>
+@endsection
+
+@section('content')
+<div x-data="curriculaPage()">
+
+  {{-- ══ Header ═══════════════════════════════════════════════════ --}}
+  <div class="dash-page-header">
+    <div class="dash-page-header__text">
+      <h1 class="dash-page-header__title">إدارة المقررات العلمية</h1>
+      <p class="dash-page-header__sub">إدارة الكتب والمتون العلمية مع الشيوخ الشارحين</p>
+    </div>
+    <div class="dash-page-header__actions">
+      <button class="dash-btn dash-btn--primary" @click="showForm = !showForm">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        <span x-text="showForm ? 'إخفاء النموذج' : 'إضافة مقرر'"></span>
+      </button>
+    </div>
+  </div>
+
+  {{-- ══ Add Form ══════════════════════════════════════════════════ --}}
+  <div x-show="showForm" x-transition style="margin-bottom:1.5rem">
+    <div class="dash-form-card">
+      <div class="dash-form-card__header">
+        <h2 class="dash-form-card__title">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          إضافة مقرر علمي جديد
+        </h2>
+      </div>
+      <form method="POST" action="#" enctype="multipart/form-data">
+        @csrf
+        <div class="dash-form-card__body">
+
+          <div class="dash-field">
+            <label class="dash-label">اسم الكتاب <span style="color:#c0392b;font-size:.72rem">*</span></label>
+            <input type="text" class="dash-input" placeholder="مثال: الأصول الثلاثة" required>
+          </div>
+
+          <div class="dash-field__row">
+            <div class="dash-field">
+              <label class="dash-label">المؤلف الأصلي</label>
+              <input type="text" class="dash-input" placeholder="مثال: محمد بن عبد الوهاب">
+            </div>
+            <div class="dash-field">
+              <label class="dash-label">الشيخ الشارح</label>
+              <select class="dash-select">
+                <option value="">اختر الشيخ...</option>
+                <option>الشيخ يحيى الحجوري</option>
+                <option>الشيخ عبد العزيز</option>
+                <option>الشيخ محمد الغامدي</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="dash-field__row">
+            <div class="dash-field">
+              <label class="dash-label">التخصص</label>
+              <select class="dash-select">
+                <option value="">اختر التخصص...</option>
+                @foreach(['عقيدة','فقه','حديث','تفسير','لغة','أخلاق'] as $s)
+                  <option>{{ $s }}</option>
+                @endforeach
+              </select>
+            </div>
+            <div class="dash-field">
+              <label class="dash-label">المستوى</label>
+              <select class="dash-select">
+                <option value="">اختر المستوى...</option>
+                <option>مبتدئ</option><option>متوسط</option><option>متقدم</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="dash-field">
+            <label class="dash-label">وصف المقرر <span class="dash-label__optional">(اختياري)</span></label>
+            <textarea class="dash-textarea" rows="3" placeholder="وصف مختصر للمقرر..."></textarea>
+          </div>
+
+          <div class="dash-field__row">
+            <div class="dash-field">
+              <label class="dash-label">صورة الغلاف <span class="dash-label__optional">(اختياري)</span></label>
+              <label class="dash-file-upload">
+                <div class="dash-file-upload__icon">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+                    <polyline points="21 15 16 10 5 21"/>
+                  </svg>
+                </div>
+                <span class="dash-file-upload__label">اسحب صورة أو انقر للاختيار</span>
+                <input type="file" accept="image/*" style="display:none">
+              </label>
+            </div>
+            <div class="dash-field">
+              <label class="dash-label">ملف PDF للكتاب <span class="dash-label__optional">(اختياري)</span></label>
+              <label class="dash-file-upload">
+                <div class="dash-file-upload__icon">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                  </svg>
+                </div>
+                <span class="dash-file-upload__label">اسحب ملف PDF أو انقر</span>
+                <input type="file" accept=".pdf" style="display:none">
+              </label>
+            </div>
+          </div>
+
+          <div class="dash-field">
+            <label class="dash-label">حالة النشر</label>
+            <select class="dash-select">
+              <option value="draft">مسودة</option>
+              <option value="published">منشور</option>
+            </select>
+          </div>
+
+        </div>
+        <div class="dash-form-card__footer">
+          <button type="button" class="dash-btn dash-btn--ghost" @click="showForm=false">إلغاء</button>
+          <button type="submit" class="dash-btn dash-btn--primary">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            حفظ المقرر
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  {{-- ══ Table ════════════════════════════════════════════════════ --}}
+  <div class="dash-table-wrap">
+    <div class="dash-table-toolbar">
+      <div class="dash-table-search">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             style="color:var(--text-muted-day);flex-shrink:0">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+        <input class="dash-table-search__input" type="text" x-model="tableQuery"
+               placeholder="ابحث باسم الكتاب أو الشيخ...">
+      </div>
+
+      {{-- Publish filter --}}
+      <div class="dash-filter-chips" style="padding:0">
+        @foreach(['الكل','منشور','مسودة'] as $chip)
+          <button class="dash-filter-chip"
+                  :class="filterStatus==='{{ $chip }}' ? 'dash-filter-chip--active' : ''"
+                  @click="filterStatus='{{ $chip }}'">
+            {{ $chip }}
+          </button>
+        @endforeach
+      </div>
+
+      <span class="dash-table-count" style="margin-right:auto">
+        إجمالي: <strong>١٤٧</strong> مقرر
+      </span>
+    </div>
+
+    {{-- Desktop --}}
+    <div class="dash-table-desktop">
+      <table class="dash-table">
+        <thead>
+          <tr>
+            <th>اسم الكتاب</th>
+            <th>الشيخ الشارح</th>
+            <th>التخصص</th>
+            <th>الدروس</th>
+            <th>النشر</th>
+            <th>تاريخ الإضافة</th>
+            <th style="width:120px"></th>
+          </tr>
+        </thead>
+        <tbody>
+          @php $curricula = [
+            [1,'الأصول الثلاثة',            'الشيخ يحيى الحجوري', 'aqeedah','عقيدة','١٢ درساً','published','منشور',  '٢ يناير ٢٠٢٥'],
+            [2,'الأربعون النووية',           'الشيخ محمد الغامدي', 'hadith', 'حديث', '٤٢ درساً','draft',    'مسودة',  '١٥ يناير ٢٠٢٥'],
+            [3,'زاد المستقنع في الفقه',      'الشيخ عبد العزيز',   'fiqh',   'فقه',  '٨٨ درساً','published','منشور',  '١ فبراير ٢٠٢٥'],
+            [4,'العقيدة الواسطية',           'الشيخ يحيى الحجوري', 'aqeedah','عقيدة','٢٤ درساً','published','منشور',  '٨ فبراير ٢٠٢٥'],
+            [5,'متن الآجرومية في النحو',     'الشيخ محمد الغامدي', 'lang',   'لغة',  '١٦ درساً','draft',    'مسودة',  '١٢ فبراير ٢٠٢٥'],
+          ]; @endphp
+
+          @foreach($curricula as [$id,$book,$sheikh,$topicId,$topic,$lessons,$statusVal,$statusLabel,$date])
+          <tr x-bind:data-row-id="'row-' + ($id ?? $loop?.index ?? Math.random())" data-row-id="">
+            <td>
+              <div style="display:flex;align-items:center;gap:10px">
+                <div style="width:8px;height:8px;border-radius:50%;flex-shrink:0;
+                  background:{{ $topicId==='aqeedah' ? 'var(--primary)' : ($topicId==='fiqh' ? '#3d7a50' : ($topicId==='hadith' ? 'var(--accent)' : ($topicId==='lang' ? '#3c648c' : 'var(--text-muted-day)'))) }}">
+                </div>
+                <span class="dash-table__cell--title">{{ $book }}</span>
+              </div>
+            </td>
+            <td style="font-size:.82rem;color:var(--text-muted-day)">{{ $sheikh }}</td>
+            <td>
+              <span class="dash-badge dash-badge--{{ $statusVal === 'published' ? 'published' : 'draft' }}"
+                    style="background:rgba(4,95,114,0.08);color:var(--primary);border-color:transparent">
+                {{ $topic }}
+              </span>
+            </td>
+            <td style="font-size:.84rem;font-weight:600;color:var(--text-day)">{{ $lessons }}</td>
+            <td>
+              <span class="dash-badge dash-badge--{{ $statusVal }}">
+                <span class="dash-badge__dot"></span>{{ $statusLabel }}
+              </span>
+            </td>
+            <td style="font-size:.78rem;color:var(--text-muted-day);white-space:nowrap">{{ $date }}</td>
+            <td>
+              <div class="dash-row-actions">
+                {{-- Edit — opens slide panel --}}
+                <button type="button"
+                        class="dash-btn--edit"
+                        @click="$dispatch('open-edit', {
+                          id: {{ $id }},
+                          title: '{{ addslashes($book) }}',
+                          createdAt: '{{ $date }}',
+                          fields: [
+                            { label:'اسم الكتاب', name:'title', type:'text', value:'{{ addslashes($book) }}' },
+                            { label:'الشيخ الشارح', name:'sheikh', type:'select', value:'{{ $sheikh }}',
+                              options:[
+                                {value:'الشيخ يحيى الحجوري',label:'الشيخ يحيى الحجوري'},
+                                {value:'الشيخ عبد العزيز',label:'الشيخ عبد العزيز'},
+                                {value:'الشيخ محمد الغامدي',label:'الشيخ محمد الغامدي'}
+                              ]
+                            },
+                            { label:'التخصص', name:'topic', type:'select', value:'{{ $topic }}',
+                              options:[
+                                {value:'عقيدة',label:'عقيدة'},{value:'فقه',label:'فقه'},
+                                {value:'حديث',label:'حديث'},{value:'لغة',label:'لغة'},{value:'أخلاق',label:'أخلاق'}
+                              ]
+                            },
+                            { label:'حالة النشر', name:'status', type:'select', value:'{{ $statusVal }}',
+                              options:[{value:'draft',label:'مسودة'},{value:'published',label:'منشور'}]
+                            }
+                          ]
+                        })">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                  </svg>
+                  تعديل
+                </button>
+
+                {{-- Delete --}}
+                <button type="button"
+                        class="dash-btn--delete"
+                        @click="$dispatch('open-delete', {id:{{ $id }}, name:'{{ addslashes($book) }}'})"
+                        title="حذف">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                       stroke-width="2" stroke-linecap="round">
+                    <polyline points="3 6 5 6 21 6"/>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
+                  </svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+          @endforeach
+        </tbody>
+      </table>
+    </div>
+
+    {{-- Mobile --}}
+    <div class="dash-table-mobile">
+      @foreach($curricula as [$id,$book,$sheikh,$topicId,$topic,$lessons,$statusVal,$statusLabel,$date])
+        <div class="dash-mobile-row">
+          <div class="dash-mobile-row__main">
+            <p class="dash-mobile-row__title">{{ $book }}</p>
+            <div class="dash-mobile-row__meta">
+              <span class="dash-mobile-row__meta-item">{{ $sheikh }}</span>
+              <span class="dash-mobile-row__meta-item">{{ $lessons }}</span>
+              <span class="dash-mobile-row__meta-item">
+                <span class="dash-badge dash-badge--{{ $statusVal }}" style="font-size:.65rem">
+                  <span class="dash-badge__dot"></span>{{ $statusLabel }}
+                </span>
+              </span>
+            </div>
+          </div>
+          <div class="dash-mobile-row__actions">
+            <button type="button"
+                    class="dash-btn--edit"
+                    @click="$dispatch('open-edit', {id:{{ $id }}, title:'{{ addslashes($book) }}', fields:[]})">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+              </svg>
+              تعديل
+            </button>
+            <button type="button"
+                    class="dash-btn--delete"
+                    @click="$dispatch('open-delete',{id:{{ $id }},name:'{{ addslashes($book) }}'})">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <polyline points="3 6 5 6 21 6"/>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      @endforeach
+    </div>
+
+  </div>{{-- end table-wrap --}}
+
+  {{-- Shared components --}}
+  <x-dashboard.edit-panel formAction="/admin/curricula" />
+  <x-dashboard.confirm-delete-modal />
+  <x-dashboard.details-modal-mobile />
+
+</div>
+
+<script>
+function curriculaPage() {
+  return {
+    showForm: false,
+    tableQuery: '',
+    filterStatus: 'الكل',
+  }
+}
+</script>
+@endsection
+
+
+
+==================================================
+FILE: \resources\views\admin\dashboard\index.blade.php
+==================================================
+
+{{-- {-- resources/views/admin/dashboard/index.blade.php --} --}}
+@extends('layouts.dashboard')
+
+@section('title', 'الرئيسية')
+
+@section('breadcrumb')
+  <span class="dash-breadcrumb__sep">‹</span>
+  <span class="dash-breadcrumb__current">الرئيسية</span>
+@endsection
+
+@section('content')
+
+{{-- Fatwa Alert — Von Restorff: most urgent item first --}}
+<div class="dash-alert dash-alert--warning" style="margin-bottom:1.25rem">
+  <div class="dash-alert__icon">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+    </svg>
+  </div>
+  <div class="dash-alert__body">
+    <p class="dash-alert__title">لديك 7 أسئلة فتاوى جديدة تنتظر المراجعة</p>
+    <p class="dash-alert__desc">آخر سؤال وصل منذ ١٢ دقيقة. المراجعة السريعة تُقلل من انتظار الزوار.</p>
+    <a href="/admin/fatwas/questions" class="dash-alert__action">
+      راجع الأسئلة الآن
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <path d="M5 12h14M12 5l7 7-7 7"/>
+      </svg>
+    </a>
+  </div>
+</div>
+
+{{-- Page header --}}
+<div class="dash-page-header">
+  <div class="dash-page-header__text">
+    <h1 class="dash-page-header__title">مرحباً، محمد</h1>
+    <p class="dash-page-header__sub">نظرة عامة على حالة الموسوعة — {{ now()->format('d M Y') }}</p>
+  </div>
+</div>
+
+{{-- Stats grid — Miller: 4 cards maximum --}}
+<div class="dash-stats-grid">
+  <div class="dash-stat-card">
+    <div class="dash-stat-card__top">
+      <span class="dash-stat-card__label">المقررات المنشورة</span>
+      <div class="dash-stat-card__icon dash-stat-card__icon--primary">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>
+        </svg>
+      </div>
+    </div>
+    <div class="dash-stat-card__value">١٤٧</div>
+    <span class="dash-stat-card__delta">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg>
+      +٣ هذا الأسبوع
+    </span>
+  </div>
+
+  <div class="dash-stat-card">
+    <div class="dash-stat-card__top">
+      <span class="dash-stat-card__label">الدروس المنشورة</span>
+      <div class="dash-stat-card__icon dash-stat-card__icon--accent">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/>
+        </svg>
+      </div>
+    </div>
+    <div class="dash-stat-card__value">٢٠٤٨</div>
+    <span class="dash-stat-card__delta">+١٢ هذا الأسبوع</span>
+  </div>
+
+  <div class="dash-stat-card">
+    <div class="dash-stat-card__top">
+      <span class="dash-stat-card__label">الفتاوى المنشورة</span>
+      <div class="dash-stat-card__icon dash-stat-card__icon--green">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+        </svg>
+      </div>
+    </div>
+    <div class="dash-stat-card__value">٥٢٣</div>
+    <span class="dash-stat-card__delta">+٧ هذا الشهر</span>
+  </div>
+
+  <div class="dash-stat-card">
+    <div class="dash-stat-card__top">
+      <span class="dash-stat-card__label">كتب المكتبة</span>
+      <div class="dash-stat-card__icon dash-stat-card__icon--purple">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+        </svg>
+      </div>
+    </div>
+    <div class="dash-stat-card__value">٨٩</div>
+    <span class="dash-stat-card__delta">+٢ هذا الشهر</span>
+  </div>
+</div>
+
+{{-- Quick Actions --}}
+<div class="dash-section-card" style="margin-bottom:1.5rem">
+  <div class="dash-section-card__header">
+    <span class="dash-section-card__title">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/>
+      </svg>
+      إجراءات سريعة
+    </span>
+  </div>
+  <div class="dash-section-card__body">
+    <div class="dash-quick-actions">
+      <a href="/admin/lessons?action=add" class="dash-quick-btn">
+        <div class="dash-quick-btn__icon" style="background:rgba(4,95,114,0.1);color:var(--primary)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </div>
+        <span class="dash-quick-btn__label">إضافة درس جديد</span>
+      </a>
+      <a href="/admin/library?action=add" class="dash-quick-btn">
+        <div class="dash-quick-btn__icon" style="background:rgba(122,77,140,0.1);color:#7a4d8c">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        </div>
+        <span class="dash-quick-btn__label">إضافة كتاب جديد</span>
+      </a>
+      <a href="/admin/fatwas/questions" class="dash-quick-btn">
+        <div class="dash-quick-btn__icon" style="background:rgba(177,147,70,0.1);color:var(--accent)">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <span class="dash-quick-btn__label">مراجعة الفتاوى <span style="display:block;font-size:.7rem;font-weight:400;color:var(--accent)">7 جديدة</span></span>
+      </a>
+      <a href="/admin/curricula?action=add" class="dash-quick-btn">
+        <div class="dash-quick-btn__icon" style="background:rgba(61,122,80,0.1);color:#3d7a50">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/></svg>
+        </div>
+        <span class="dash-quick-btn__label">إضافة مقرر جديد</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+{{-- Bottom grid: Activity + Mini chart --}}
+<div class="dash-grid-2">
+
+  {{-- Recent Activity --}}
+  <div class="dash-section-card" style="margin-bottom:0">
+    <div class="dash-section-card__header">
+      <span class="dash-section-card__title">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+        </svg>
+        آخر النشاطات
+      </span>
+      <a href="/admin/activity-log" style="font-size:.78rem;font-weight:500;color:var(--primary);text-decoration:none">عرض الكل</a>
+    </div>
+    <div class="dash-section-card__body" style="padding:0">
+      <ul class="dash-activity-list" style="padding:0 1.25rem">
+        @php $activities = [
+          ['add',    'أضاف محمد العدني',    'درس جديد: شرح الأصول الثلاثة — الدرس ٣',  'منذ ٢٠ دقيقة'],
+          ['edit',   'عدّل أحمد المنصوري',  'مقرر: العقيدة الواسطية',                    'منذ ساعة'],
+          ['publish','نشر عبد الله السالم', 'فتوى: حكم قراءة القرآن من الهاتف',         'منذ ٣ ساعات'],
+          ['add',    'أضاف محمد العدني',    'كتاب: الأربعون النووية — طبعة جديدة',       'أمس'],
+          ['delete', 'حذف أحمد المنصوري',  'تعليق مسيء من الأسئلة',                     'أمس'],
+        ]; @endphp
+
+        @foreach($activities as [$type,$who,$what,$when])
+          <li class="dash-activity-item">
+            <div class="dash-activity-item__icon dash-activity-item__icon--{{ $type }}">
+              @if($type==='add')
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              @elseif($type==='edit')
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              @elseif($type==='publish')
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+              @else
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+              @endif
+            </div>
+            <div class="dash-activity-item__body">
+              <p class="dash-activity-item__text"><strong>{{ $who }}</strong> — {{ $what }}</p>
+              <p class="dash-activity-item__time">{{ $when }}</p>
+            </div>
+          </li>
+        @endforeach
+      </ul>
+    </div>
+  </div>
+
+  {{-- Content summary --}}
+  <div class="dash-section-card" style="margin-bottom:0">
+    <div class="dash-section-card__header">
+      <span class="dash-section-card__title">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+          <rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>
+        </svg>
+        ملخص المحتوى
+      </span>
+    </div>
+    <div class="dash-section-card__body" style="padding:0">
+      @php $summary = [
+        ['المقررات العلمية', '١٤٧', '/admin/curricula',    'rgba(4,95,114,0.1)',   'var(--primary)'],
+        ['الدروس',           '٢٠٤٨','/admin/lessons',      'rgba(177,147,70,0.1)', 'var(--accent)'],
+        ['خطب الجمعة',       '٣٤١', '/admin/sermons',      'rgba(122,77,140,0.1)', '#7a4d8c'],
+        ['المحاضرات',        '٢١٩', '/admin/lectures',     'rgba(61,122,80,0.1)',  '#3d7a50'],
+        ['الردود العلمية',   '٢٠٠', '/admin/refutations',  'rgba(138,106,40,0.1)', '#8a6a28'],
+        ['الكتب',            '٨٩',  '/admin/library',      'rgba(60,100,140,0.1)', '#3c648c'],
+      ]; @endphp
+      @foreach($summary as [$label,$count,$link,$bg,$color])
+        <a href="{{ $link }}" style="display:flex;align-items:center;gap:12px;padding:.875rem 1.25rem;border-bottom:1px solid var(--border-day);text-decoration:none;transition:background .15s">
+          <span style="width:8px;height:8px;border-radius:50%;background:{{ $color }};flex-shrink:0"></span>
+          <span style="flex:1;font-size:.84rem;color:var(--text-day)">{{ $label }}</span>
+          <span style="font-family:'ThmanyahSerifDisplay',serif;font-size:.95rem;font-weight:700;color:{{ $color }}">{{ $count }}</span>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--border-day)"><path d="M15 18l-6-6 6-6"/></svg>
+        </a>
+      @endforeach
+    </div>
+  </div>
+
+</div>
+
+@endsection
+
+
+
+==================================================
+FILE: \resources\views\admin\fatwas\published\index.blade.php
+==================================================
+
+{{-- resources/views/admin/fatwas/published/index.blade.php --}}
+@extends('layouts.dashboard')
+@section('title', 'الفتاوى المنشورة')
+@section('breadcrumb')
+  <span class="dash-breadcrumb__sep">‹</span>
+  <span class="dash-breadcrumb__current">الفتاوى المنشورة</span>
+@endsection
+
+@section('content')
+<div x-data="publishedFatwasPage()">
+
+  <div class="dash-page-header">
+    <div class="dash-page-header__text">
+      <h1 class="dash-page-header__title">الفتاوى المنشورة</h1>
+      <p class="dash-page-header__sub">إدارة الفتاوى المنشورة وإضافة فتاوى جديدة يدوياً</p>
+    </div>
+    <div class="dash-page-header__actions">
+      <button class="dash-btn dash-btn--primary" @click="showForm = !showForm">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        <span x-text="showForm ? 'إخفاء النموذج' : 'إضافة فتوى'"></span>
+      </button>
+    </div>
+  </div>
+
+  {{-- Add Form --}}
+  <div x-show="showForm" x-transition style="margin-bottom:1.5rem">
+    <div class="dash-form-card">
+      <div class="dash-form-card__header">
+        <h2 class="dash-form-card__title">إضافة فتوى جديدة يدوياً</h2>
+      </div>
+      <form method="POST" action="#">
+        @csrf
+        <div class="dash-form-card__body">
+          <div class="dash-field">
+            <label class="dash-label">السؤال الكامل <span style="color:#c0392b;font-size:.72rem">*</span></label>
+            <textarea class="dash-textarea" rows="3" placeholder="نص السؤال كاملاً..." required></textarea>
+          </div>
+          <div class="dash-field">
+            <label class="dash-label">الجواب — الحكم ثم الدليل ثم التفصيل</label>
+            <div class="dash-richtext">
+              <div class="dash-richtext__toolbar">
+                <button type="button" class="dash-richtext__toolbar-btn"><b>ع</b></button>
+                <button type="button" class="dash-richtext__toolbar-btn"><i>م</i></button>
+                <button type="button" class="dash-richtext__toolbar-btn">H1</button>
+                <button type="button" class="dash-richtext__toolbar-btn">H2</button>
+              </div>
+              <div class="dash-richtext__content" contenteditable="true"
+                   placeholder="الحكم: ... ← الدليل: ... ← التفصيل: ..."></div>
+            </div>
+          </div>
+          <div class="dash-field__row">
+            <div class="dash-field">
+              <label class="dash-label">المفتي</label>
+              <select class="dash-select">
+                <option value="">اختر المفتي...</option>
+                @foreach(['الشيخ يحيى الحجوري','الشيخ عبد العزيز','الشيخ محمد الغامدي','الشيخ صالح الفوزان'] as $s)
+                  <option>{{ $s }}</option>
+                @endforeach
+              </select>
+            </div>
+            <div class="dash-field">
+              <label class="dash-label">التصنيف</label>
+              <select class="dash-select">
+                <option value="">اختر التصنيف...</option>
+                @foreach(['عقيدة','فقه','معاملات','أسرة','أخلاق']) as $t)
+                  <option>{{ $t }}</option>
+                @endforeach
+              </select>
+            </div>
+          </div>
+          <div class="dash-field__row">
+            <div class="dash-field">
+              <label class="dash-label">تاريخ الفتوى</label>
+              <input type="date" class="dash-input">
+            </div>
+            <div class="dash-field">
+              <label class="dash-label">حالة النشر</label>
+              <select class="dash-select">
+                <option value="draft">مسودة</option>
+                <option value="published">منشور</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="dash-form-card__footer">
+          <button type="button" class="dash-btn dash-btn--ghost" @click="showForm=false">إلغاء</button>
+          <button type="submit" class="dash-btn dash-btn--primary">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            حفظ ونشر
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  {{-- Table --}}
+  <div class="dash-table-wrap">
+    <div class="dash-table-toolbar">
+      <div class="dash-table-search">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             style="color:var(--text-muted-day);flex-shrink:0">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+        <input class="dash-table-search__input" type="text" x-model="tableQuery"
+               placeholder="ابحث في الفتاوى...">
+      </div>
+      <div class="dash-filter-chips" style="padding:0">
+        @foreach(['الكل','عقيدة','فقه','معاملات','أسرة'] as $chip)
+          <button class="dash-filter-chip"
+                  :class="filterTopic==='{{ $chip }}' ? 'dash-filter-chip--active':''"
+                  @click="filterTopic='{{ $chip }}'">{{ $chip }}</button>
+        @endforeach
+      </div>
+      <span class="dash-table-count" style="margin-right:auto">إجمالي: <strong>٥٢٣</strong> فتوى</span>
+    </div>
+
+    <div class="dash-table-desktop">
+      <table class="dash-table">
+        <thead>
+          <tr>
+            <th>السؤال</th>
+            <th>المفتي</th>
+            <th>التصنيف</th>
+            <th>تاريخ النشر</th>
+            <th>النشر</th>
+            <th style="width:120px"></th>
+          </tr>
+        </thead>
+        <tbody>
+          @php $fatwas = [
+            [1,'حكم قراءة القرآن من الهاتف المحمول دون وضوء','الشيخ يحيى الحجوري','فقه',      '٢ يناير ٢٠٢٥','published','منشور'],
+            [2,'هل يجوز صيام يوم الشك؟',                    'الشيخ عبد العزيز',  'فقه',      '٥ يناير ٢٠٢٥','published','منشور'],
+            [3,'حكم الصلاة خلف إمام مبتدع',                 'الشيخ يحيى الحجوري','عقيدة',    '٨ يناير ٢٠٢٥','draft',    'مسودة'],
+            [4,'ما حكم العقود الآجلة في الذهب',             'الشيخ محمد الغامدي','معاملات',  '١٢ يناير ٢٠٢٥','published','منشور'],
+            [5,'حكم تهنئة غير المسلمين بأعيادهم',           'الشيخ يحيى الحجوري','أخلاق',    '١٥ يناير ٢٠٢٥','published','منشور'],
+          ]; @endphp
+
+          @foreach($fatwas as [$id,$question,$mufti,$topic,$date,$statusVal,$statusLabel])
+          <tr data-row-id="{{ $id }}">
+            <td class="dash-table__cell--title" style="max-width:260px">{{ $question }}</td>
+            <td style="font-size:.82rem;color:var(--text-muted-day);white-space:nowrap">{{ $mufti }}</td>
+            <td><span class="dash-badge" style="background:rgba(4,95,114,0.08);color:var(--primary)">{{ $topic }}</span></td>
+            <td style="font-size:.78rem;color:var(--text-muted-day);white-space:nowrap">{{ $date }}</td>
+            <td>
+              <span class="dash-badge dash-badge--{{ $statusVal }}">
+                <span class="dash-badge__dot"></span>{{ $statusLabel }}
+              </span>
+            </td>
+            <td>
+              <div class="dash-row-actions">
+                <button type="button" class="dash-btn--edit"
+                        @click="$dispatch('open-edit', {
+                          id: {{ $id }},
+                          title: '{{ Str::limit(addslashes($question), 30) }}',
+                          createdAt: '{{ $date }}',
+                          fields: [
+                            { label:'السؤال', name:'question', type:'textarea', value:'{{ addslashes($question) }}', rows:3 },
+                            { label:'المفتي', name:'mufti', type:'select', value:'{{ $mufti }}',
+                              options:[
+                                {value:'الشيخ يحيى الحجوري',label:'الشيخ يحيى الحجوري'},
+                                {value:'الشيخ عبد العزيز',label:'الشيخ عبد العزيز'},
+                                {value:'الشيخ محمد الغامدي',label:'الشيخ محمد الغامدي'},
+                                {value:'الشيخ صالح الفوزان',label:'الشيخ صالح الفوزان'}
+                              ]
+                            },
+                            { label:'التصنيف', name:'topic', type:'select', value:'{{ $topic }}',
+                              options:[
+                                {value:'عقيدة',label:'عقيدة'},{value:'فقه',label:'فقه'},
+                                {value:'معاملات',label:'معاملات'},{value:'أسرة',label:'أسرة'},{value:'أخلاق',label:'أخلاق'}
+                              ]
+                            },
+                            { label:'حالة النشر', name:'status', type:'select', value:'{{ $statusVal }}',
+                              options:[{value:'draft',label:'مسودة'},{value:'published',label:'منشور'}]
+                            }
+                          ]
+                        })">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                  </svg>
+                  تعديل
+                </button>
+                <button type="button" class="dash-btn--delete"
+                        @click="$dispatch('open-delete',{id:{{ $id }},name:'فتوى رقم {{ $id }}'})"
+                        title="حذف">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                       stroke-width="2" stroke-linecap="round">
+                    <polyline points="3 6 5 6 21 6"/>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
+                  </svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+          @endforeach
+        </tbody>
+      </table>
+    </div>
+
+    <div class="dash-table-mobile">
+      @foreach($fatwas as [$id,$question,$mufti,$topic,$date,$statusVal,$statusLabel])
+        <div class="dash-mobile-row" data-row-id="{{ $id }}">
+          <div class="dash-mobile-row__main">
+            <p class="dash-mobile-row__title">{{ Str::limit($question, 55) }}</p>
+            <div class="dash-mobile-row__meta">
+              <span class="dash-mobile-row__meta-item">{{ $mufti }}</span>
+              <span class="dash-mobile-row__meta-item">
+                <span class="dash-badge dash-badge--{{ $statusVal }}" style="font-size:.65rem">
+                  <span class="dash-badge__dot"></span>{{ $statusLabel }}
+                </span>
+              </span>
+            </div>
+          </div>
+          <div class="dash-mobile-row__actions">
+            <button type="button" class="dash-btn--edit"
+                    @click="$dispatch('open-edit',{id:{{ $id }},title:'فتوى رقم {{ $id }}',fields:[
+                      {label:'المفتي',name:'mufti',type:'select',value:'{{ $mufti }}',options:[{value:'الشيخ يحيى الحجوري',label:'الشيخ يحيى الحجوري'},{value:'الشيخ عبد العزيز',label:'الشيخ عبد العزيز'},{value:'الشيخ محمد الغامدي',label:'الشيخ محمد الغامدي'}]},
+                      {label:'حالة النشر',name:'status',type:'select',value:'{{ $statusVal }}',options:[{value:'draft',label:'مسودة'},{value:'published',label:'منشور'}]}
+                    ]})">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+              </svg>
+              تعديل
+            </button>
+            <button type="button" class="dash-btn--delete"
+                    @click="$dispatch('open-delete',{id:{{ $id }},name:'فتوى رقم {{ $id }}'})">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="2" stroke-linecap="round">
+                <polyline points="3 6 5 6 21 6"/>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      @endforeach
+    </div>
+  </div>
+
+  <x-dashboard.edit-panel formAction="/admin/fatwas/published" />
+  <x-dashboard.confirm-delete-modal />
+  <x-dashboard.details-modal-mobile />
+
+</div>
+
+<script>
+function publishedFatwasPage() {
+  return { showForm: false, tableQuery: '', filterTopic: 'الكل' }
+}
+</script>
+@endsection
+
+
+
+==================================================
+FILE: \resources\views\admin\fatwas\questions\index.blade.php
+==================================================
+
+{{-- resources/views/admin/fatwas/questions/index.blade.php --}}
+@extends('layouts.dashboard')
+@section('title', 'أسئلة الفتاوى الجديدة')
+@section('breadcrumb')
+  <span class="dash-breadcrumb__sep">‹</span>
+  <span class="dash-breadcrumb__current">أسئلة جديدة</span>
+@endsection
+
+@section('content')
+<div x-data="fatwasQuestionsPage()" x-cloak>
+
+  {{-- ══ Page header ══════════════════════════════════════════════ --}}
+  <div class="dash-page-header">
+    <div class="dash-page-header__text">
+      <h1 class="dash-page-header__title">أسئلة الفتاوى الجديدة</h1>
+      <p class="dash-page-header__sub">الأسئلة الواردة من الزوار — مرتبة بالأحدث. المراجعة السريعة تُقلل وقت انتظار الزوار.</p>
+    </div>
+  </div>
+
+  {{-- ══ Alert ════════════════════════════════════════════════════ --}}
+  <div class="dash-alert dash-alert--warning" style="margin-bottom:1.25rem">
+    <div class="dash-alert__icon">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+      </svg>
+    </div>
+    <div class="dash-alert__body">
+      <p class="dash-alert__title">7 أسئلة جديدة تنتظر المراجعة</p>
+      <p class="dash-alert__desc">آخر سؤال وصل منذ ١٢ دقيقة — توجيه السؤال لشيخ يُسرّع المعالجة.</p>
+    </div>
+  </div>
+
+  {{-- ══ Filter chips ═════════════════════════════════════════════ --}}
+  <div class="dash-filter-chips" style="margin-bottom:1rem">
+    @foreach(['الكل','الجديدة','قيد المراجعة','مُجابة','مرفوضة'] as $chip)
+      <button class="dash-filter-chip"
+              :class="activeChip === '{{ $chip }}' ? 'dash-filter-chip--active' : ''"
+              @click="activeChip = '{{ $chip }}'">
+        {{ $chip }}
+        @if($chip === 'الجديدة')
+          <span class="dash-tab__count" style="margin-right:4px">7</span>
+        @endif
+      </button>
+    @endforeach
+  </div>
+
+  {{-- ══ Table ════════════════════════════════════════════════════ --}}
+  <div class="dash-table-wrap">
+
+    {{-- Toolbar --}}
+    <div class="dash-table-toolbar">
+      <div class="dash-table-search">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             style="color:var(--text-muted-day);flex-shrink:0">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+        <input class="dash-table-search__input" type="text" x-model="tableQuery"
+               placeholder="ابحث بعنوان السؤال أو اسم المرسل...">
+      </div>
+      <span class="dash-table-count" style="margin-right:auto">
+        إجمالي: <strong>٧</strong> سؤال جديد
+      </span>
+    </div>
+
+    {{-- ── Desktop table ────────────────────────────────────────── --}}
+    <div class="dash-table-desktop">
+      <table class="dash-table">
+        <thead>
+          <tr>
+            <th style="width:35%">السؤال</th>
+            <th>المرسل</th>
+            <th>التاريخ</th>
+            <th>توجيه لشيخ</th>
+            <th>النشر</th>
+            <th>الحالة</th>
+            <th style="width:130px"></th>
+          </tr>
+        </thead>
+        <tbody>
+          @php
+          $questions = [
+            [1,'حكم قراءة القرآن من الهاتف المحمول دون وضوء','مجهول','منذ ١٢ دقيقة','new'],
+            [2,'هل يجوز الصلاة خلف إمام لا يُتقن الفاتحة','أحمد محمد','منذ ٤٥ دقيقة','new'],
+            [3,'حكم العقود الآجلة في الذهب والفضة','مجهول','منذ ساعتين','reviewing'],
+            [4,'ما حكم الاستثمار في صناديق الاستثمار الإسلامية','خالد العمري','منذ ٣ ساعات','new'],
+            [5,'هل تجب زكاة المال على الديون المؤجلة','مجهول','أمس ١١:٢٢','new'],
+            [6,'حكم الصلاة في المسجد الذي فيه قبر','عبد الله السالم','أمس ٩:٠٥','new'],
+            [7,'ما صحة حديث طلب العلم فريضة على كل مسلم','مجهول','منذ يومين','reviewing'],
+          ];
+          @endphp
+
+          @foreach($questions as [$id,$question,$sender,$date,$status])
+          <tr x-bind:data-row-id="'row-' + ($id ?? $loop?.index ?? Math.random())" data-row-id="">
+            {{-- السؤال --}}
+            <td>
+              <p style="font-size:.87rem;font-weight:500;color:var(--text-day);line-height:1.45;
+                         display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;
+                         -webkit-box-orient:vertical;overflow:hidden">
+                {{ $question }}
+              </p>
+            </td>
+
+            {{-- المرسل --}}
+            <td>
+              <div style="display:flex;align-items:center;gap:7px">
+                <div style="width:28px;height:28px;border-radius:7px;background:rgba(4,95,114,0.08);
+                             color:var(--primary);display:flex;align-items:center;justify-content:center;
+                             font-size:.72rem;font-weight:700;flex-shrink:0">
+                  {{ $sender === 'مجهول' ? '؟' : mb_substr($sender,0,1,'UTF-8') }}
+                </div>
+                <span style="font-size:.8rem;color:{{ $sender==='مجهول' ? 'var(--text-muted-day)' : 'var(--text-day)' }}">
+                  {{ $sender }}
+                </span>
+              </div>
+            </td>
+
+            {{-- التاريخ --}}
+            <td style="font-size:.78rem;color:var(--text-muted-day);white-space:nowrap">{{ $date }}</td>
+
+            {{-- توجيه لشيخ — Custom Searchable Dropdown --}}
+            <td>
+              <div class="dash-custom-select dash-sheikh-select"
+                   x-data="sheikhSelectData({{ $id }})"
+                   @click.away="open = false">
+
+                <button type="button"
+                        class="dash-custom-select__trigger"
+                        style="min-width:160px"
+                        @click="open = !open"
+                        :class="selected ? 'dash-custom-select--assigned' : ''">
+
+                  {{-- Avatar if selected --}}
+                  <template x-if="selected">
+                    <div class="dash-custom-select__avatar" style="width:22px;height:22px;font-size:.65rem;border-radius:6px"
+                         x-text="selected.initial"></div>
+                  </template>
+
+                  {{-- Icon if not selected --}}
+                  <template x-if="!selected">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="2" style="color:var(--text-muted-day);flex-shrink:0">
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                      <circle cx="12" cy="7" r="4"/>
+                    </svg>
+                  </template>
+
+                  <span class="dash-custom-select__value">
+                    <span x-show="!selected" class="dash-custom-select__placeholder">وجّه لشيخ...</span>
+                    <span x-show="selected" x-text="selected?.name" style="font-size:.8rem"></span>
+                  </span>
+
+                  <svg class="dash-custom-select__chevron" width="11" height="11"
+                       viewBox="0 0 16 16" fill="currentColor">
+                    <path d="M4 6l4 4 4-4H4z"/>
+                  </svg>
+                </button>
+
+                {{-- Panel --}}
+                <div class="dash-custom-select__panel" x-show="open" x-transition
+                     style="width:280px" @click.stop>
+
+                  {{-- Search --}}
+                  <div class="dash-custom-select__search">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="2" style="color:var(--text-muted-day);flex-shrink:0">
+                      <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                    </svg>
+                    <input class="dash-custom-select__search-input"
+                           type="text"
+                           x-model="search"
+                           placeholder="ابحث عن شيخ..."
+                           @click.stop>
+                  </div>
+
+                  {{-- List --}}
+                  <div class="dash-custom-select__list">
+
+                    {{-- "بدون توجيه" option --}}
+                    <button type="button"
+                            class="dash-custom-select__option"
+                            :class="!selected ? 'dash-custom-select__option--selected' : ''"
+                            @click="selected = null; open = false">
+                      <div style="width:30px;height:30px;border-radius:8px;background:var(--bg-day);
+                                   border:1px dashed var(--border-day);display:flex;align-items:center;
+                                   justify-content:center;flex-shrink:0">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2" style="color:var(--text-muted-day)">
+                          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                      </div>
+                      <span class="dash-custom-select__option-label" style="color:var(--text-muted-day)">
+                        بدون توجيه
+                      </span>
+                      <svg x-show="!selected" class="dash-custom-select__check"
+                           width="13" height="13" viewBox="0 0 24 24" fill="none"
+                           stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                        <polyline points="20 6 9 17 4 12"/>
+                      </svg>
+                    </button>
+
+                    {{-- Sheikh options --}}
+                    <template x-for="sheikh in filteredSheikhs" :key="sheikh.id">
+                      <button type="button"
+                              class="dash-custom-select__option"
+                              :class="selected?.id === sheikh.id ? 'dash-custom-select__option--selected' : ''"
+                              @click="selected = sheikh; open = false">
+                        <div class="dash-custom-select__avatar" x-text="sheikh.initial"></div>
+                        <div style="flex:1;min-width:0">
+                          <p class="dash-custom-select__option-label" x-text="sheikh.name"></p>
+                          <p style="font-size:.67rem;color:var(--text-muted-day);margin-top:1px"
+                             x-text="sheikh.specialty"></p>
+                        </div>
+                        <span class="dash-custom-select__option-meta" x-text="sheikh.count"></span>
+                        <svg x-show="selected?.id === sheikh.id" class="dash-custom-select__check"
+                             width="13" height="13" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                          <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                      </button>
+                    </template>
+
+                    {{-- Empty state --}}
+                    <p class="dash-custom-select__empty"
+                       x-show="filteredSheikhs.length === 0">
+                      لا يوجد شيخ بهذا الاسم
+                    </p>
+
+                  </div>
+                </div>
+              </div>
+            </td>
+
+            {{-- النشر — Publish Status Dropdown --}}
+            <td>
+              <div class="dash-custom-select dash-publish-select"
+                   :data-value="publishStatus[{{ $id }}] ?? 'draft'"
+                   x-data="{ open: false }"
+                   @click.away="open = false">
+
+                <button type="button"
+                        class="dash-custom-select__trigger"
+                        style="min-width:110px"
+                        @click="open = !open">
+                  <span class="dash-status-dot"></span>
+                  <span class="dash-custom-select__value"
+                        x-text="(publishStatus[{{ $id }}] ?? 'draft') === 'published' ? 'منشور' : 'غير منشور'">
+                  </span>
+                  <svg class="dash-custom-select__chevron" width="11" height="11"
+                       viewBox="0 0 16 16" fill="currentColor">
+                    <path d="M4 6l4 4 4-4H4z"/>
+                  </svg>
+                </button>
+
+                <div class="dash-custom-select__panel" x-show="open" x-transition
+                     style="min-width:160px;width:160px" @click.stop>
+                  <div class="dash-custom-select__list" style="padding:4px">
+
+                    <button type="button"
+                            class="dash-custom-select__option"
+                            :class="(publishStatus[{{ $id }}] ?? 'draft') === 'published' ? 'dash-custom-select__option--selected' : ''"
+                            @click="publishStatus[{{ $id }}] = 'published'; $el.closest('.dash-custom-select').setAttribute('data-value','published'); open=false">
+                      <span style="width:8px;height:8px;border-radius:50%;background:#3d7a50;flex-shrink:0"></span>
+                      <span class="dash-custom-select__option-label">منشور</span>
+                      <svg x-show="(publishStatus[{{ $id }}] ?? 'draft') === 'published'"
+                           class="dash-custom-select__check" width="12" height="12"
+                           viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                           stroke-width="2.5" stroke-linecap="round">
+                        <polyline points="20 6 9 17 4 12"/>
+                      </svg>
+                    </button>
+
+                    <button type="button"
+                            class="dash-custom-select__option"
+                            :class="(publishStatus[{{ $id }}] ?? 'draft') === 'draft' ? 'dash-custom-select__option--selected' : ''"
+                            @click="publishStatus[{{ $id }}] = 'draft'; $el.closest('.dash-custom-select').setAttribute('data-value','draft'); open=false">
+                      <span style="width:8px;height:8px;border-radius:50%;background:var(--text-muted-day);opacity:.45;flex-shrink:0"></span>
+                      <span class="dash-custom-select__option-label">غير منشور</span>
+                      <svg x-show="(publishStatus[{{ $id }}] ?? 'draft') === 'draft'"
+                           class="dash-custom-select__check" width="12" height="12"
+                           viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                           stroke-width="2.5" stroke-linecap="round">
+                        <polyline points="20 6 9 17 4 12"/>
+                      </svg>
+                    </button>
+
+                  </div>
+                </div>
+              </div>
+            </td>
+
+            {{-- الحالة --}}
+            <td>
+              @if($status === 'new')
+                <span class="dash-badge dash-badge--pending">
+                  <span class="dash-badge__dot"></span>جديد
+                </span>
+              @else
+                <span class="dash-badge dash-badge--draft">
+                  <span class="dash-badge__dot"></span>قيد المراجعة
+                </span>
+              @endif
+            </td>
+
+            {{-- Actions --}}
+            <td>
+              <div class="dash-row-actions">
+                {{-- معالجة --}}
+                <button type="button"
+                        class="dash-btn dash-btn--primary dash-btn--sm"
+                        @click="openProcess({{ $id }}, '{{ addslashes($question) }}')">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                       stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                  </svg>
+                  معالجة
+                </button>
+
+                {{-- حذف --}}
+                <button type="button"
+                        class="dash-btn--delete"
+                        @click="$dispatch('open-delete', {id:{{ $id }}, name:'السؤال رقم {{ $id }}'})"
+                        title="حذف">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+                       stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                    <polyline points="3 6 5 6 21 6"/>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
+                  </svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+          @endforeach
+        </tbody>
+      </table>
+    </div>
+
+    {{-- ── Mobile cards ──────────────────────────────────────────── --}}
+    <div class="dash-table-mobile">
+      @php $questions_mobile = [
+        [1,'حكم قراءة القرآن من الهاتف دون وضوء','مجهول','منذ ١٢ دقيقة','new'],
+        [2,'هل يجوز الصلاة خلف إمام لا يُتقن الفاتحة','أحمد محمد','منذ ٤٥ دقيقة','new'],
+        [3,'حكم العقود الآجلة في الذهب والفضة','مجهول','منذ ساعتين','reviewing'],
+      ]; @endphp
+      @foreach($questions_mobile as [$id,$q,$sender,$date,$status])
+        <div class="dash-mobile-row">
+          <div class="dash-mobile-row__main">
+            <p class="dash-mobile-row__title">{{ $q }}</p>
+            <div class="dash-mobile-row__meta">
+              <span class="dash-mobile-row__meta-item">{{ $sender }}</span>
+              <span class="dash-mobile-row__meta-item">{{ $date }}</span>
+              <span class="dash-mobile-row__meta-item">
+                @if($status==='new')
+                  <span class="dash-badge dash-badge--pending" style="font-size:.65rem">
+                    <span class="dash-badge__dot"></span>جديد
+                  </span>
+                @else
+                  <span class="dash-badge dash-badge--draft" style="font-size:.65rem">
+                    <span class="dash-badge__dot"></span>قيد المراجعة
+                  </span>
+                @endif
+              </span>
+            </div>
+          </div>
+          <div class="dash-mobile-row__actions">
+            <button type="button"
+                    class="dash-btn dash-btn--primary dash-btn--sm"
+                    @click="openProcess({{ $id }}, '{{ addslashes($q) }}')">
+              معالجة
+            </button>
+            <button type="button"
+                    class="dash-btn--delete"
+                    @click="$dispatch('open-delete',{id:{{ $id }},name:'السؤال'})">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <polyline points="3 6 5 6 21 6"/>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      @endforeach
+    </div>
+
+  </div>{{-- end table-wrap --}}
+
+
+  {{-- ══ PROCESS MODAL — معالجة السؤال ════════════════════════════ --}}
+  <div x-show="processOpen"
+       class="dash-modal-backdrop"
+       @click.self="processOpen = false"
+       @keydown.escape.window="processOpen = false"
+       x-transition:enter="transition-opacity duration-200"
+       x-transition:enter-start="opacity-0"
+       x-transition:enter-end="opacity-100"
+       x-transition:leave="transition-opacity duration-200"
+       x-transition:leave-start="opacity-100"
+       x-transition:leave-end="opacity-0">
+
+    <div class="dash-modal dash-fatwa-modal" @click.stop
+         x-transition:enter="transition duration-200"
+         x-transition:enter-start="opacity-0 scale-95"
+         x-transition:enter-end="opacity-100 scale-100">
+
+      {{-- Header --}}
+      <div class="dash-modal__header">
+        <div>
+          <p style="font-size:.67rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-bottom:3px">
+            معالجة السؤال
+          </p>
+          <h3 class="dash-modal__title">صياغة الجواب</h3>
+        </div>
+        <button class="dash-modal__close" @click="processOpen = false">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+
+      {{-- Body --}}
+      <div class="dash-modal__body">
+
+        {{-- السؤال المعروض --}}
+        <div class="dash-fatwa-modal__question">
+          <p class="dash-fatwa-modal__question-label">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2" style="display:inline;vertical-align:middle;margin-left:4px">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+            سؤال الزائر
+          </p>
+          <p class="dash-fatwa-modal__question-text" x-text="processQuestion"></p>
+        </div>
+
+        {{-- توجيه لشيخ داخل المودال --}}
+        <div class="dash-field" style="margin-bottom:.25rem">
+          <label class="dash-label">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+            توجيه لشيخ <span class="dash-label__optional">(اختياري)</span>
+          </label>
+          <div class="dash-custom-select" x-data="{ open: false, selected: null, search: '' }"
+               @click.away="open=false" style="width:100%">
+            <button type="button" class="dash-custom-select__trigger" style="width:100%" @click="open=!open">
+              <template x-if="selected">
+                <div class="dash-custom-select__avatar" x-text="selected.initial"></div>
+              </template>
+              <template x-if="!selected">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2" style="color:var(--text-muted-day);flex-shrink:0">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                </svg>
+              </template>
+              <span class="dash-custom-select__value">
+                <span x-show="!selected" class="dash-custom-select__placeholder">اختر شيخاً للإجابة...</span>
+                <span x-show="selected" x-text="selected?.name"></span>
+              </span>
+              <svg class="dash-custom-select__chevron" width="11" height="11"
+                   viewBox="0 0 16 16" fill="currentColor"><path d="M4 6l4 4 4-4H4z"/></svg>
+            </button>
+            <div class="dash-custom-select__panel" x-show="open" x-transition
+                 style="width:100%;position:relative;top:4px;box-shadow:none;border:1px solid var(--border-day);border-radius:10px"
+                 @click.stop>
+              <div class="dash-custom-select__search">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2" style="color:var(--text-muted-day)">
+                  <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                </svg>
+                <input class="dash-custom-select__search-input" type="text"
+                       x-model="search" placeholder="ابحث عن شيخ..." @click.stop>
+              </div>
+              <div class="dash-custom-select__list">
+                <template x-for="s in $root.sheikhs.filter(s => s.name.includes(search))" :key="s.id">
+                  <button type="button" class="dash-custom-select__option"
+                          :class="selected?.id === s.id ? 'dash-custom-select__option--selected':''"
+                          @click="selected = s; open = false">
+                    <div class="dash-custom-select__avatar" x-text="s.initial"></div>
+                    <div style="flex:1;min-width:0">
+                      <p class="dash-custom-select__option-label" x-text="s.name"></p>
+                      <p style="font-size:.67rem;color:var(--text-muted-day)" x-text="s.specialty"></p>
+                    </div>
+                    <svg x-show="selected?.id === s.id" class="dash-custom-select__check"
+                         width="12" height="12" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                  </button>
+                </template>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {{-- صياغة الجواب --}}
+        <div>
+          <p class="dash-fatwa-modal__answer-label">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+            </svg>
+            الجواب
+          </p>
+          <textarea class="dash-fatwa-modal__answer-textarea"
+                    x-model="processAnswer"
+                    placeholder="اكتب الجواب بوضوح — الحكم أولاً، ثم الدليل، ثم التفصيل..."></textarea>
+          {{-- Guide tags --}}
+          <div class="dash-fatwa-modal__guide">
+            <span style="font-size:.7rem;color:var(--text-muted-day);align-self:center">قوالب:</span>
+            @foreach(['الحكم:','الدليل:','التفصيل:','والله أعلم'] as $tag)
+              <button type="button"
+                      class="dash-fatwa-modal__guide-tag"
+                      @click="processAnswer += (processAnswer ? '\n\n' : '') + '{{ $tag }} '">
+                {{ $tag }}
+              </button>
+            @endforeach
+          </div>
+        </div>
+
+        {{-- Field: المفتي --}}
+        <div class="dash-field" style="margin-top:.25rem">
+          <label class="dash-label">المفتي الرسمي</label>
+          <select class="dash-select">
+            <option value="">اختر المفتي...</option>
+            <option>الشيخ يحيى الحجوري</option>
+            <option>الشيخ عبد العزيز</option>
+            <option>الشيخ محمد الغامدي</option>
+          </select>
+        </div>
+
+        {{-- Field: تصنيف --}}
+        <div class="dash-field">
+          <label class="dash-label">التصنيف</label>
+          <select class="dash-select">
+            <option value="">اختر التصنيف...</option>
+            <option>عقيدة</option>
+            <option>فقه</option>
+            <option>معاملات</option>
+            <option>أسرة</option>
+            <option>أخلاق</option>
+          </select>
+        </div>
+
+      </div>
+
+      {{-- Footer --}}
+      <div class="dash-modal__footer" style="justify-content:space-between">
+        <button type="button" class="dash-btn dash-btn--ghost" @click="processOpen = false">
+          إلغاء
+        </button>
+        <div style="display:flex;gap:8px">
+          {{-- حفظ كمسودة --}}
+          <button type="button" class="dash-btn dash-btn--outline"
+                  @click="saveProcess('draft')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+              <polyline points="17 21 17 13 7 13 7 21"/>
+              <polyline points="7 3 7 8 15 8"/>
+            </svg>
+            حفظ مسودة
+          </button>
+          {{-- نشر --}}
+          <button type="button" class="dash-btn dash-btn--publish"
+                  @click="saveProcess('publish')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            نشر الفتوى
+          </button>
+        </div>
+      </div>
+
+    </div>{{-- end modal --}}
+  </div>{{-- end backdrop --}}
+
+  <x-dashboard.confirm-delete-modal />
+  <x-dashboard.details-modal-mobile />
+
+</div>{{-- end x-data --}}
+
+<script>
+function fatwasQuestionsPage() {
+  return {
+    activeChip: 'الكل',
+    tableQuery: '',
+    processOpen: false,
+    processId: null,
+    processQuestion: '',
+    processAnswer: '',
+    publishStatus: {},  // { questionId: 'draft' | 'published' }
+
+    sheikhs: [
+      { id:1, name:'الشيخ يحيى الحجوري',  initial:'ي', specialty:'عقيدة وحديث', count:'٧٨ فتوى' },
+      { id:2, name:'الشيخ عبد العزيز',     initial:'ع', specialty:'فقه ومعاملات', count:'٥٤ فتوى' },
+      { id:3, name:'الشيخ محمد الغامدي',  initial:'م', specialty:'أصول وتفسير',  count:'٤١ فتوى' },
+      { id:4, name:'الشيخ صالح الفوزان',  initial:'ص', specialty:'فقه عام',       count:'٦٢ فتوى' },
+      { id:5, name:'الشيخ ابن عثيمين',    initial:'م', specialty:'فقه وعقيدة',   count:'٧١ فتوى' },
+      { id:6, name:'الشيخ الألباني',       initial:'م', specialty:'حديث ورجال',   count:'٤٢ فتوى' },
+      { id:7, name:'الشيخ مقبل الوادعي',  initial:'م', specialty:'حديث وتخريج',  count:'٢٨ فتوى' },
+    ],
+
+    openProcess(id, question) {
+      this.processId = id;
+      this.processQuestion = question;
+      this.processAnswer = '';
+      this.processOpen = true;
+    },
+
+    saveProcess(mode) {
+      if (!this.processAnswer.trim()) {
+        alert('الرجاء كتابة الجواب أولاً.');
+        return;
+      }
+      if (mode === 'publish') {
+        this.publishStatus[this.processId] = 'published';
+      }
+      // TODO: submit via fetch/axios
+      this.processOpen = false;
+    }
+  }
+}
+
+function sheikhSelectData(questionId) {
+  return {
+    open: false,
+    search: '',
+    selected: null,
+    get filteredSheikhs() {
+      const sheikhs = [
+        { id:1, name:'الشيخ يحيى الحجوري',  initial:'ي', specialty:'عقيدة وحديث', count:'٧٨ فتوى' },
+        { id:2, name:'الشيخ عبد العزيز',     initial:'ع', specialty:'فقه ومعاملات', count:'٥٤ فتوى' },
+        { id:3, name:'الشيخ محمد الغامدي',  initial:'م', specialty:'أصول وتفسير',  count:'٤١ فتوى' },
+        { id:4, name:'الشيخ صالح الفوزان',  initial:'ص', specialty:'فقه عام',       count:'٦٢ فتوى' },
+        { id:5, name:'الشيخ ابن عثيمين',    initial:'م', specialty:'فقه وعقيدة',   count:'٧١ فتوى' },
+        { id:6, name:'الشيخ الألباني',       initial:'م', specialty:'حديث ورجال',   count:'٤٢ فتوى' },
+        { id:7, name:'الشيخ مقبل الوادعي',  initial:'م', specialty:'حديث وتخريج',  count:'٢٨ فتوى' },
+      ];
+      if (!this.search) return sheikhs;
+      return sheikhs.filter(s => s.name.includes(this.search));
+    }
+  }
+}
+</script>
+@endsection
+
+
+
+==================================================
+FILE: \resources\views\admin\lectures\index.blade.php
+==================================================
+
+{{-- resources/views/admin/lectures/index.blade.php --}}
+@extends('layouts.dashboard')
+@section('title', 'إدارة المحاضرات العامة')
+@section('breadcrumb')
+  <span class="dash-breadcrumb__sep">‹</span>
+  <span class="dash-breadcrumb__current">المحاضرات</span>
+@endsection
+
+@section('content')
+<div x-data="lecturesPage()">
+
+  <div class="dash-page-header">
+    <div class="dash-page-header__text">
+      <h1 class="dash-page-header__title">إدارة المحاضرات العامة</h1>
+      <p class="dash-page-header__sub">المحاضرات العلمية المستقلة — مفردة أو متعددة الأجزاء</p>
+    </div>
+    <div class="dash-page-header__actions">
+      <button class="dash-btn dash-btn--primary" @click="showForm = !showForm">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        <span x-text="showForm ? 'إخفاء النموذج' : 'إضافة محاضرة'"></span>
+      </button>
+    </div>
+  </div>
+
+  <div x-show="showForm" x-transition style="margin-bottom:1.5rem">
+    <div class="dash-form-card">
+      <div class="dash-form-card__header">
+        <h2 class="dash-form-card__title">إضافة محاضرة جديدة</h2>
+      </div>
+      <form method="POST" action="#" enctype="multipart/form-data" x-data="{ isMulti: false }">
+        @csrf
+        <div class="dash-form-card__body">
+          <div class="dash-field">
+            <label class="dash-label">عنوان المحاضرة الرئيسي <span style="color:#c0392b;font-size:.72rem">*</span></label>
+            <input type="text" class="dash-input" placeholder="مثال: أسباب النصر والهزيمة في ضوء السنة" required>
+          </div>
+          <div class="dash-field__row">
+            <div class="dash-field">
+              <label class="dash-label">الشيخ</label>
+              <select class="dash-select">
+                <option value="">اختر الشيخ...</option>
+                @foreach(['الشيخ يحيى الحجوري','الشيخ عبد العزيز','الشيخ محمد الغامدي'] as $s)
+                  <option>{{ $s }}</option>
+                @endforeach
+              </select>
+            </div>
+            <div class="dash-field">
+              <label class="dash-label">التصنيف</label>
+              <select class="dash-select">
+                <option value="">اختر التصنيف...</option>
+                @foreach(['عقيدة','فقه','أخلاق','حديث'] as $t)
+                  <option>{{ $t }}</option>
+                @endforeach
+              </select>
+            </div>
+          </div>
+          <div class="dash-toggle-row">
+            <span class="dash-toggle-label">محاضرة متعددة الأجزاء؟</span>
+            <label class="dash-toggle">
+              <input type="checkbox" x-model="isMulti">
+              <span class="dash-toggle__slider"></span>
+            </label>
+          </div>
+          <div x-show="isMulti" x-transition>
+            <div class="dash-field">
+              <label class="dash-label">رقم الجزء</label>
+              <input type="number" class="dash-input" placeholder="١" min="1">
+            </div>
+          </div>
+          <div class="dash-field">
+            <label class="dash-label">ملف الصوت <span style="color:#c0392b;font-size:.72rem">*</span></label>
+            <label class="dash-file-upload">
+              <div class="dash-file-upload__icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              </div>
+              <span class="dash-file-upload__label">اسحب ملف MP3 أو انقر للاختيار</span>
+              <input type="file" accept="audio/*" style="display:none">
+            </label>
+          </div>
+          <div class="dash-field">
+            <label class="dash-label">حالة النشر</label>
+            <select class="dash-select"><option value="draft">مسودة</option><option value="published">منشور</option></select>
+          </div>
+        </div>
+        <div class="dash-form-card__footer">
+          <button type="button" class="dash-btn dash-btn--ghost" @click="showForm=false">إلغاء</button>
+          <button type="submit" class="dash-btn dash-btn--primary">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            حفظ المحاضرة
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="dash-table-wrap">
+    <div class="dash-table-toolbar">
+      <div class="dash-table-search">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text-muted-day);flex-shrink:0"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input class="dash-table-search__input" type="text" x-model="tableQuery" placeholder="ابحث بعنوان المحاضرة أو الشيخ...">
+      </div>
+      <div class="dash-filter-chips" style="padding:0">
+        @foreach(['الكل','مفردة','متعددة الأجزاء'] as $chip)
+          <button class="dash-filter-chip" :class="filterType==='{{ $chip }}' ? 'dash-filter-chip--active':''" @click="filterType='{{ $chip }}'">{{ $chip }}</button>
+        @endforeach
+      </div>
+      <span class="dash-table-count" style="margin-right:auto">إجمالي: <strong>٢١٩</strong> محاضرة</span>
+    </div>
+
+    <div class="dash-table-desktop">
+      <table class="dash-table">
+        <thead>
+          <tr><th>عنوان المحاضرة</th><th>الشيخ</th><th>الأجزاء</th><th>التصنيف</th><th>النشر</th><th style="width:120px"></th></tr>
+        </thead>
+        <tbody>
+          @php $lectures = [
+            [1,'أسباب النصر والهزيمة في ضوء السنة', 'الشيخ يحيى الحجوري','٣ أجزاء','عقيدة','published','منشور', '٢ يناير ٢٠٢٥'],
+            [2,'الشباب والتحديات المعاصرة',          'الشيخ عبد العزيز',  '١ جزء',  'أخلاق','published','منشور', '٩ يناير ٢٠٢٥'],
+            [3,'الإسلام والعلم',                     'الشيخ محمد الغامدي','١ جزء',  'عقيدة','draft',    'مسودة', '١٦ يناير ٢٠٢٥'],
+            [4,'التحذير من فتنة المال',              'الشيخ يحيى الحجوري','٢ جزء',  'فقه',  'published','منشور', '٢٣ يناير ٢٠٢٥'],
+            [5,'مفهوم التوبة وشروط قبولها',          'الشيخ عبد العزيز',  '١ جزء',  'أخلاق','published','منشور', '٣٠ يناير ٢٠٢٥'],
+          ]; @endphp
+
+          @foreach($lectures as [$id,$title,$sheikh,$parts,$topic,$statusVal,$statusLabel,$date])
+          <tr data-row-id="{{ $id }}">
+            <td class="dash-table__cell--title">{{ $title }}</td>
+            <td style="font-size:.82rem;color:var(--text-muted-day)">{{ $sheikh }}</td>
+            <td style="font-size:.82rem;color:var(--text-muted-day)">{{ $parts }}</td>
+            <td><span class="dash-badge" style="background:rgba(4,95,114,0.08);color:var(--primary)">{{ $topic }}</span></td>
+            <td><span class="dash-badge dash-badge--{{ $statusVal }}"><span class="dash-badge__dot"></span>{{ $statusLabel }}</span></td>
+            <td>
+              <div class="dash-row-actions">
+                <button type="button" class="dash-btn--edit"
+                        @click="$dispatch('open-edit', {
+                          id: {{ $id }}, title: '{{ addslashes($title) }}', createdAt: '{{ $date }}',
+                          fields: [
+                            { label:'عنوان المحاضرة', name:'title', type:'text', value:'{{ addslashes($title) }}' },
+                            { label:'الشيخ', name:'sheikh', type:'select', value:'{{ $sheikh }}',
+                              options:[{value:'الشيخ يحيى الحجوري',label:'الشيخ يحيى الحجوري'},{value:'الشيخ عبد العزيز',label:'الشيخ عبد العزيز'},{value:'الشيخ محمد الغامدي',label:'الشيخ محمد الغامدي'}] },
+                            { label:'التصنيف', name:'topic', type:'select', value:'{{ $topic }}',
+                              options:[{value:'عقيدة',label:'عقيدة'},{value:'فقه',label:'فقه'},{value:'أخلاق',label:'أخلاق'},{value:'حديث',label:'حديث'}] },
+                            { label:'حالة النشر', name:'status', type:'select', value:'{{ $statusVal }}',
+                              options:[{value:'draft',label:'مسودة'},{value:'published',label:'منشور'}] }
+                          ]
+                        })">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  تعديل
+                </button>
+                <button type="button" class="dash-btn--delete"
+                        @click="$dispatch('open-delete',{id:{{ $id }},name:'{{ addslashes($title) }}'})">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+          @endforeach
+        </tbody>
+      </table>
+    </div>
+
+    <div class="dash-table-mobile">
+      @foreach($lectures as [$id,$title,$sheikh,$parts,$topic,$statusVal,$statusLabel,$date])
+        <div class="dash-mobile-row" data-row-id="{{ $id }}">
+          <div class="dash-mobile-row__main">
+            <p class="dash-mobile-row__title">{{ $title }}</p>
+            <div class="dash-mobile-row__meta">
+              <span class="dash-mobile-row__meta-item">{{ $sheikh }}</span>
+              <span class="dash-mobile-row__meta-item">{{ $parts }}</span>
+              <span class="dash-mobile-row__meta-item"><span class="dash-badge dash-badge--{{ $statusVal }}" style="font-size:.65rem"><span class="dash-badge__dot"></span>{{ $statusLabel }}</span></span>
+            </div>
+          </div>
+          <div class="dash-mobile-row__actions">
+            <button type="button" class="dash-btn--edit"
+                    @click="$dispatch('open-edit',{id:{{ $id }},title:'{{ addslashes($title) }}',fields:[{label:'عنوان المحاضرة',name:'title',type:'text',value:'{{ addslashes($title) }}'},{label:'حالة النشر',name:'status',type:'select',value:'{{ $statusVal }}',options:[{value:'draft',label:'مسودة'},{value:'published',label:'منشور'}]}]})">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              تعديل
+            </button>
+            <button type="button" class="dash-btn--delete" @click="$dispatch('open-delete',{id:{{ $id }},name:'{{ addslashes($title) }}'})">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+            </button>
+          </div>
+        </div>
+      @endforeach
+    </div>
+  </div>
+
+  <x-dashboard.edit-panel formAction="/admin/lectures" />
+  <x-dashboard.confirm-delete-modal />
+  <x-dashboard.details-modal-mobile />
+
+</div>
+<script>
+function lecturesPage() { return { showForm: false, tableQuery: '', filterType: 'الكل' } }
+</script>
+@endsection
+
+
+
+==================================================
+FILE: \resources\views\admin\lessons\index.blade.php
+==================================================
+
+{{-- resources/views/admin/lessons/index.blade.php --}}
+@extends('layouts.dashboard')
+@section('title', 'إدارة الدروس')
+@section('breadcrumb')
+  <span class="dash-breadcrumb__sep">‹</span>
+  <span class="dash-breadcrumb__current">الدروس</span>
+@endsection
+
+@section('content')
+<div x-data="lessonsPage()">
+
+  <div class="dash-page-header">
+    <div class="dash-page-header__text">
+      <h1 class="dash-page-header__title">إدارة الدروس</h1>
+      <p class="dash-page-header__sub">إضافة الدروس الصوتية وربطها بمقرراتها</p>
+    </div>
+    <div class="dash-page-header__actions">
+      <button class="dash-btn dash-btn--primary" @click="showForm = !showForm">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        <span x-text="showForm ? 'إخفاء النموذج' : 'إضافة درس'"></span>
+      </button>
+    </div>
+  </div>
+
+  {{-- Add Form --}}
+  <div x-show="showForm" x-transition style="margin-bottom:1.5rem">
+    <div class="dash-form-card">
+      <div class="dash-form-card__header">
+        <h2 class="dash-form-card__title">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          إضافة درس جديد
+        </h2>
+      </div>
+      <form method="POST" action="#" enctype="multipart/form-data">
+        @csrf
+        <div class="dash-form-card__body">
+          <div class="dash-field">
+            <label class="dash-label">المقرر المرتبط <span style="color:#c0392b;font-size:.72rem">*</span></label>
+            <select class="dash-select" required>
+              <option value="">اختر المقرر...</option>
+              @foreach(['الأصول الثلاثة','الأربعون النووية','زاد المستقنع','العقيدة الواسطية'] as $c)
+                <option>{{ $c }}</option>
+              @endforeach
+            </select>
+          </div>
+          <div class="dash-field__row">
+            <div class="dash-field">
+              <label class="dash-label">رقم الدرس <span style="color:#c0392b;font-size:.72rem">*</span></label>
+              <input type="number" class="dash-input" placeholder="١" min="1">
+            </div>
+            <div class="dash-field">
+              <label class="dash-label">عنوان الدرس <span style="color:#c0392b;font-size:.72rem">*</span></label>
+              <input type="text" class="dash-input" placeholder="مثال: الدرس الأول — مقدمة" required>
+            </div>
+          </div>
+          <div class="dash-field">
+            <label class="dash-label">ملف الصوت <span style="color:#c0392b;font-size:.72rem">*</span></label>
+            <label class="dash-file-upload">
+              <div class="dash-file-upload__icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+              </div>
+              <span class="dash-file-upload__label">اسحب ملف MP3 أو انقر للاختيار</span>
+              <input type="file" accept="audio/*" style="display:none">
+            </label>
+          </div>
+          <div class="dash-field">
+            <label class="dash-label">رابط صوتي بديل <span class="dash-label__optional">(اختياري)</span></label>
+            <input type="url" class="dash-input" placeholder="https://...">
+          </div>
+          <div class="dash-field">
+            <label class="dash-label">نص الدرس <span class="dash-label__optional">(اختياري)</span></label>
+            <textarea class="dash-textarea" rows="4" placeholder="نص الدرس أو ملخصه..."></textarea>
+          </div>
+          <div class="dash-field__row">
+            <div class="dash-field">
+              <label class="dash-label">مدة الصوت <span class="dash-label__optional">(اختياري)</span></label>
+              <input type="text" class="dash-input" placeholder="مثال: ٤٨ دقيقة">
+            </div>
+            <div class="dash-field">
+              <label class="dash-label">حالة النشر</label>
+              <select class="dash-select">
+                <option value="draft">مسودة</option>
+                <option value="published">منشور</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="dash-form-card__footer">
+          <button type="button" class="dash-btn dash-btn--ghost" @click="showForm=false">إلغاء</button>
+          <button type="submit" class="dash-btn dash-btn--primary">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            حفظ الدرس
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  {{-- Table --}}
+  <div class="dash-table-wrap">
+    <div class="dash-table-toolbar">
+      <div class="dash-table-search">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             style="color:var(--text-muted-day);flex-shrink:0">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+        <input class="dash-table-search__input" type="text" x-model="tableQuery"
+               placeholder="ابحث بعنوان الدرس أو المقرر...">
+      </div>
+      <div class="dash-filter-chips" style="padding:0">
+         as $chip)
+          <button class="dash-filter-chip"
+                  :class="filterStatus==='{{ $chip }}' ? 'dash-filter-chip--active':''"
+                  @click="filterStatus='{{ $chip }}'">{{ $chip }}</button>
+        @endforeach
+      </div>
+      <span class="dash-table-count" style="margin-right:auto">إجمالي: <strong>٢٠٤٨</strong> درساً</span>
+    </div>
+
+    <div class="dash-table-desktop">
+      <table class="dash-table">
+        <thead>
+          <tr>
+            <th style="width:40px">#</th>
+            <th>عنوان الدرس</th>
+            <th>المقرر</th>
+            <th>المدة</th>
+            <th>النشر</th>
+            <th style="width:120px"></th>
+          </tr>
+        </thead>
+        <tbody>
+          @php $lessons = [
+            [1, 1,  'مقدمة المقرر وأهمية الكتاب',           'الأصول الثلاثة',    '٢٢ د', 'published','منشور',  '٢ يناير ٢٠٢٥'],
+            [2, 2,  'الأصل الأول: معرفة الرب سبحانه',      'الأصول الثلاثة',    '٥٢ د', 'published','منشور',  '٣ يناير ٢٠٢٥'],
+            [3, 3,  'الأصل الثاني: معرفة دين الإسلام',     'الأصول الثلاثة',    '٤٨ د', 'published','منشور',  '٤ يناير ٢٠٢٥'],
+            [4, 1,  'مقدمة في علم الحديث',                  'الأربعون النووية',  '٣٥ د', 'published','منشور',  '٥ يناير ٢٠٢٥'],
+            [5, 2,  'الحديث الأول: الأعمال بالنيات',        'الأربعون النووية',  '٦٢ د', 'draft',    'مسودة',  '٦ يناير ٢٠٢٥'],
+          ]; @endphp
+
+          @foreach($lessons as [$id,$num,$title,$curriculum,$dur,$statusVal,$statusLabel,$date])
+          <tr data-row-id="{{ $id }}">
+            <td style="font-size:.8rem;color:var(--text-muted-day);font-weight:600">{{ $num }}</td>
+            <td class="dash-table__cell--title">{{ $title }}</td>
+            <td style="font-size:.82rem;color:var(--text-muted-day)">{{ $curriculum }}</td>
+            <td style="font-size:.82rem;color:var(--text-muted-day);white-space:nowrap">{{ $dur }}</td>
+            <td>
+              <span class="dash-badge dash-badge--{{ $statusVal }}">
+                <span class="dash-badge__dot"></span>{{ $statusLabel }}
+              </span>
+            </td>
+            <td>
+              <div class="dash-row-actions">
+                <button type="button" class="dash-btn--edit"
+                        @click="$dispatch('open-edit', {
+                          id: {{ $id }},
+                          title: '{{ addslashes($title) }}',
+                          createdAt: '{{ $date }}',
+                          fields: [
+                            { label:'عنوان الدرس', name:'title', type:'text', value:'{{ addslashes($title) }}' },
+                            { label:'رقم الدرس', name:'number', type:'number', value:'{{ $num }}' },
+                            { label:'المقرر', name:'curriculum', type:'select', value:'{{ $curriculum }}',
+                              options:[
+                                {value:'الأصول الثلاثة',label:'الأصول الثلاثة'},
+                                {value:'الأربعون النووية',label:'الأربعون النووية'},
+                                {value:'زاد المستقنع',label:'زاد المستقنع'},
+                                {value:'العقيدة الواسطية',label:'العقيدة الواسطية'}
+                              ]
+                            },
+                            { label:'مدة الصوت', name:'duration', type:'text', value:'{{ $dur }}', placeholder:'مثال: ٤٨ دقيقة' },
+                            { label:'حالة النشر', name:'status', type:'select', value:'{{ $statusVal }}',
+                              options:[{value:'draft',label:'مسودة'},{value:'published',label:'منشور'}]
+                            }
+                          ]
+                        })">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                  </svg>
+                  تعديل
+                </button>
+                <button type="button" class="dash-btn--delete"
+                        @click="$dispatch('open-delete',{id:{{ $id }},name:'{{ addslashes($title) }}'})"
+                        title="حذف">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                    <polyline points="3 6 5 6 21 6"/>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
+                  </svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+          @endforeach
+        </tbody>
+      </table>
+    </div>
+
+    <div class="dash-table-mobile">
+      @foreach($lessons as [$id,$num,$title,$curriculum,$dur,$statusVal,$statusLabel,$date])
+        <div class="dash-mobile-row" data-row-id="{{ $id }}">
+          <div class="dash-mobile-row__main">
+            <p class="dash-mobile-row__title">{{ $title }}</p>
+            <div class="dash-mobile-row__meta">
+              <span class="dash-mobile-row__meta-item">{{ $curriculum }}</span>
+              <span class="dash-mobile-row__meta-item">{{ $dur }}</span>
+              <span class="dash-mobile-row__meta-item">
+                <span class="dash-badge dash-badge--{{ $statusVal }}" style="font-size:.65rem">
+                  <span class="dash-badge__dot"></span>{{ $statusLabel }}
+                </span>
+              </span>
+            </div>
+          </div>
+          <div class="dash-mobile-row__actions">
+            <button type="button" class="dash-btn--edit"
+                    @click="$dispatch('open-edit',{id:{{ $id }},title:'{{ addslashes($title) }}',fields:[
+                      {label:'عنوان الدرس',name:'title',type:'text',value:'{{ addslashes($title) }}'},
+                      {label:'حالة النشر',name:'status',type:'select',value:'{{ $statusVal }}',options:[{value:'draft',label:'مسودة'},{value:'published',label:'منشور'}]}
+                    ]})">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+              </svg>
+              تعديل
+            </button>
+            <button type="button" class="dash-btn--delete"
+                    @click="$dispatch('open-delete',{id:{{ $id }},name:'{{ addslashes($title) }}'})">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <polyline points="3 6 5 6 21 6"/>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      @endforeach
+    </div>
+  </div>
+
+  <x-dashboard.edit-panel formAction="/admin/lessons" />
+  <x-dashboard.confirm-delete-modal />
+  <x-dashboard.details-modal-mobile />
+
+</div>
+
+<script>
+function lessonsPage() {
+  return { showForm: false, tableQuery: '', filterStatus: 'الكل' }
+}
+</script>
+@endsection
+
+
+
+==================================================
+FILE: \resources\views\admin\library\index.blade.php
+==================================================
+
+{{-- resources/views/admin/library/index.blade.php --}}
+@extends('layouts.dashboard')
+@section('title', 'إدارة المكتبة الإسلامية')
+@section('breadcrumb')
+  <span class="dash-breadcrumb__sep">‹</span>
+  <span class="dash-breadcrumb__current">المكتبة</span>
+@endsection
+
+@section('content')
+<div x-data="libraryPage()">
+
+  <div class="dash-page-header">
+    <div class="dash-page-header__text">
+      <h1 class="dash-page-header__title">إدارة المكتبة الإسلامية</h1>
+      <p class="dash-page-header__sub">الكتب والمتون المستقلة — PDF قابل للتحميل والقراءة</p>
+    </div>
+    <div class="dash-page-header__actions">
+      <button class="dash-btn dash-btn--primary" @click="showForm = !showForm">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        <span x-text="showForm ? 'إخفاء النموذج' : 'إضافة كتاب'"></span>
+      </button>
+    </div>
+  </div>
+
+  <div x-show="showForm" x-transition style="margin-bottom:1.5rem">
+    <div class="dash-form-card">
+      <div class="dash-form-card__header">
+        <h2 class="dash-form-card__title">إضافة كتاب للمكتبة</h2>
+      </div>
+      <form method="POST" action="#" enctype="multipart/form-data">
+        @csrf
+        <div class="dash-form-card__body">
+          <div class="dash-field">
+            <label class="dash-label">اسم الكتاب <span style="color:#c0392b;font-size:.72rem">*</span></label>
+            <input type="text" class="dash-input" placeholder="مثال: الأصول الثلاثة" required>
+          </div>
+          <div class="dash-field__row">
+            <div class="dash-field">
+              <label class="dash-label">المؤلف</label>
+              <input type="text" class="dash-input" placeholder="اسم المؤلف">
+            </div>
+            <div class="dash-field">
+              <label class="dash-label">التصنيف</label>
+              <select class="dash-select">
+                <option value="">اختر التصنيف...</option>
+                @foreach(['عقيدة','فقه','حديث','تفسير','لغة','أخلاق'] as $t)
+                  <option>{{ $t }}</option>
+                @endforeach
+              </select>
+            </div>
+          </div>
+          <div class="dash-field__row">
+            <div class="dash-field">
+              <label class="dash-label">نوع الكتاب</label>
+              <select class="dash-select">
+                <option>متن</option><option>شرح</option><option>مرجع</option><option>رسالة</option>
+              </select>
+            </div>
+            <div class="dash-field">
+              <label class="dash-label">المستوى</label>
+              <select class="dash-select">
+                <option>مبتدئ</option><option>متوسط</option><option>متقدم</option>
+              </select>
+            </div>
+          </div>
+          <div class="dash-field">
+            <label class="dash-label">وصف الكتاب <span class="dash-label__optional">(اختياري)</span></label>
+            <textarea class="dash-textarea" rows="3" placeholder="وصف مختصر..."></textarea>
+          </div>
+          <div class="dash-field__row">
+            <div class="dash-field">
+              <label class="dash-label">صورة الغلاف <span class="dash-label__optional">(اختياري)</span></label>
+              <label class="dash-file-upload">
+                <div class="dash-file-upload__icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>
+                <span class="dash-file-upload__label">اسحب صورة أو انقر</span>
+                <input type="file" accept="image/*" style="display:none">
+              </label>
+            </div>
+            <div class="dash-field">
+              <label class="dash-label">ملف PDF <span style="color:#c0392b;font-size:.72rem">*</span></label>
+              <label class="dash-file-upload">
+                <div class="dash-file-upload__icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+                <span class="dash-file-upload__label">اسحب ملف PDF أو انقر</span>
+                <input type="file" accept=".pdf" style="display:none">
+              </label>
+            </div>
+          </div>
+          <div class="dash-field">
+            <label class="dash-label">حالة النشر</label>
+            <select class="dash-select"><option value="draft">مسودة</option><option value="published">منشور</option></select>
+          </div>
+        </div>
+        <div class="dash-form-card__footer">
+          <button type="button" class="dash-btn dash-btn--ghost" @click="showForm=false">إلغاء</button>
+          <button type="submit" class="dash-btn dash-btn--primary">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            حفظ الكتاب
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="dash-table-wrap">
+    <div class="dash-table-toolbar">
+      <div class="dash-table-search">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text-muted-day);flex-shrink:0"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input class="dash-table-search__input" type="text" x-model="tableQuery" placeholder="ابحث باسم الكتاب أو المؤلف...">
+      </div>
+      <div class="dash-filter-chips" style="padding:0">
+        @foreach(['الكل','متن','شرح','مرجع','رسالة'] as $chip)
+          <button class="dash-filter-chip" :class="filterType==='{{ $chip }}' ? 'dash-filter-chip--active':''" @click="filterType='{{ $chip }}'">{{ $chip }}</button>
+        @endforeach
+      </div>
+      <span class="dash-table-count" style="margin-right:auto">إجمالي: <strong>٨٩</strong> كتاباً</span>
+    </div>
+
+    <div class="dash-table-desktop">
+      <table class="dash-table">
+        <thead>
+          <tr><th>اسم الكتاب</th><th>المؤلف</th><th>التصنيف</th><th>النوع</th><th>النشر</th><th style="width:120px"></th></tr>
+        </thead>
+        <tbody>
+          @php $books = [
+            [1,'الأصول الثلاثة',        'محمد بن عبد الوهاب','عقيدة','متن',   'published','منشور', '٢ يناير ٢٠٢٥'],
+            [2,'الأربعون النووية',       'الإمام النووي',     'حديث', 'متن',   'published','منشور', '٥ يناير ٢٠٢٥'],
+            [3,'فتح الباري شرح البخاري','ابن حجر العسقلاني', 'حديث', 'شرح',   'draft',    'مسودة', '٨ يناير ٢٠٢٥'],
+            [4,'مختصر المزني',           'المزني',            'فقه',  'مرجع',  'published','منشور', '١٢ يناير ٢٠٢٥'],
+            [5,'رسالة في أصول التفسير', 'ابن تيمية',          'تفسير','رسالة', 'published','منشور', '١٥ يناير ٢٠٢٥'],
+          ]; @endphp
+
+          @foreach($books as [$id,$name,$author,$topic,$type,$statusVal,$statusLabel,$date])
+          <tr data-row-id="{{ $id }}">
+            <td class="dash-table__cell--title">{{ $name }}</td>
+            <td style="font-size:.82rem;color:var(--text-muted-day)">{{ $author }}</td>
+            <td><span class="dash-badge" style="background:rgba(4,95,114,0.08);color:var(--primary)">{{ $topic }}</span></td>
+            <td style="font-size:.82rem;color:var(--text-muted-day)">{{ $type }}</td>
+            <td><span class="dash-badge dash-badge--{{ $statusVal }}"><span class="dash-badge__dot"></span>{{ $statusLabel }}</span></td>
+            <td>
+              <div class="dash-row-actions">
+                <button type="button" class="dash-btn--edit"
+                        @click="$dispatch('open-edit', {
+                          id: {{ $id }}, title: '{{ addslashes($name) }}', createdAt: '{{ $date }}',
+                          fields: [
+                            { label:'اسم الكتاب', name:'name', type:'text', value:'{{ addslashes($name) }}' },
+                            { label:'المؤلف', name:'author', type:'text', value:'{{ addslashes($author) }}' },
+                            { label:'التصنيف', name:'topic', type:'select', value:'{{ $topic }}',
+                              options:[{value:'عقيدة',label:'عقيدة'},{value:'فقه',label:'فقه'},{value:'حديث',label:'حديث'},{value:'تفسير',label:'تفسير'},{value:'لغة',label:'لغة'},{value:'أخلاق',label:'أخلاق'}] },
+                            { label:'نوع الكتاب', name:'type', type:'select', value:'{{ $type }}',
+                              options:[{value:'متن',label:'متن'},{value:'شرح',label:'شرح'},{value:'مرجع',label:'مرجع'},{value:'رسالة',label:'رسالة'}] },
+                            { label:'حالة النشر', name:'status', type:'select', value:'{{ $statusVal }}',
+                              options:[{value:'draft',label:'مسودة'},{value:'published',label:'منشور'}] }
+                          ]
+                        })">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  تعديل
+                </button>
+                <button type="button" class="dash-btn--delete" @click="$dispatch('open-delete',{id:{{ $id }},name:'{{ addslashes($name) }}'})">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+          @endforeach
+        </tbody>
+      </table>
+    </div>
+
+    <div class="dash-table-mobile">
+      @foreach($books as [$id,$name,$author,$topic,$type,$statusVal,$statusLabel,$date])
+        <div class="dash-mobile-row" data-row-id="{{ $id }}">
+          <div class="dash-mobile-row__main">
+            <p class="dash-mobile-row__title">{{ $name }}</p>
+            <div class="dash-mobile-row__meta">
+              <span class="dash-mobile-row__meta-item">{{ $author }}</span>
+              <span class="dash-mobile-row__meta-item">{{ $type }}</span>
+              <span class="dash-mobile-row__meta-item"><span class="dash-badge dash-badge--{{ $statusVal }}" style="font-size:.65rem"><span class="dash-badge__dot"></span>{{ $statusLabel }}</span></span>
+            </div>
+          </div>
+          <div class="dash-mobile-row__actions">
+            <button type="button" class="dash-btn--edit"
+                    @click="$dispatch('open-edit',{id:{{ $id }},title:'{{ addslashes($name) }}',fields:[{label:'اسم الكتاب',name:'name',type:'text',value:'{{ addslashes($name) }}'},{label:'المؤلف',name:'author',type:'text',value:'{{ addslashes($author) }}'},{label:'حالة النشر',name:'status',type:'select',value:'{{ $statusVal }}',options:[{value:'draft',label:'مسودة'},{value:'published',label:'منشور'}]}]})">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              تعديل
+            </button>
+            <button type="button" class="dash-btn--delete" @click="$dispatch('open-delete',{id:{{ $id }},name:'{{ addslashes($name) }}'})">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+            </button>
+          </div>
+        </div>
+      @endforeach
+    </div>
+  </div>
+
+  <x-dashboard.edit-panel formAction="/admin/library" />
+  <x-dashboard.confirm-delete-modal />
+  <x-dashboard.details-modal-mobile />
+
+</div>
+<script>
+function libraryPage() { return { showForm: false, tableQuery: '', filterType: 'الكل' } }
+</script>
+@endsection
+
+
+
+==================================================
+FILE: \resources\views\admin\notifications\index.blade.php
+==================================================
+
+{-- resources/views/admin/notifications/index.blade.php --}
+@extends('layouts.dashboard')
+@section('title', 'الإشعارات الداخلية')
+@section('breadcrumb')
+  <span class="dash-breadcrumb__sep">‹</span>
+  <span class="dash-breadcrumb__current">الإشعارات</span>
+@endsection
+@section('content')
+<div x-data="{ showForm: false, tableQuery: '' }">
+  <div class="dash-page-header">
+    <div class="dash-page-header__text">
+      <h1 class="dash-page-header__title">الإشعارات الداخلية</h1>
+      <p class="dash-page-header__sub">إرسال تنبيهات ومعلومات لفريق العمل — تظهر في الهيدر وفي الصفحة الرئيسية</p>
+    </div>
+    <div class="dash-page-header__actions">
+      <button class="dash-btn dash-btn--primary" @click="showForm = !showForm">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <span x-text="showForm ? 'إخفاء' : 'إرسال إشعار'"></span>
+      </button>
+    </div>
+  </div>
+  <div x-show="showForm" x-transition style="margin-bottom:1.5rem">
+    <div class="dash-form-card">
+      <div class="dash-form-card__header"><h2 class="dash-form-card__title">إرسال إشعار جديد</h2></div>
+      <form method="POST" action="#">
+        @csrf
+        <div class="dash-form-card__body"><div class="dash-field"><label class="dash-label">نص الإشعار <span style="color:#c0392b;font-size:.72rem">*</span></label><textarea class="dash-textarea" rows="3" placeholder="نص الإشعار الذي سيصله الفريق..."></textarea></div>
+<div class="dash-field__row"><div class="dash-field"><label class="dash-label">المستهدف </label><select class="dash-select"><option value="">اختر...</option><option>جميع الإداريين</option><option>Admin فقط</option><option>شخص محدد</option></select></div><div class="dash-field"><label class="dash-label">مستوى الأهمية </label><select class="dash-select"><option value="">اختر...</option><option>معلومة</option><option>تنبيه</option><option>عاجل</option></select></div></div>
+<div class="dash-field"><label class="dash-label">تاريخ انتهاء الإشعار <span class="dash-label__optional">(اختياري)</span></label><input type="date" class="dash-input" placeholder=""></div></div>
+        <div class="dash-form-card__footer">
+          <button type="button" class="dash-btn dash-btn--ghost" @click="showForm=false">إلغاء</button>
+          <button type="submit" class="dash-btn dash-btn--primary">إرسال</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  <div class="dash-table-wrap">
+    <div class="dash-table-toolbar">
+      <div class="dash-table-search">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text-muted-day);flex-shrink:0"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input class="dash-table-search__input" type="text" x-model="tableQuery" placeholder="ابحث في الإشعارات...">
+      </div>
+      <span class="dash-table-count">إجمالي: <strong>١١</strong> إشعار</span>
+    </div>
+    <div class="dash-table-desktop">
+      <table class="dash-table">
+        <thead><tr><th>نص الإشعار</th><th>المستهدف</th><th>المستوى</th><th>تاريخ الإرسال</th><th>قرأه</th><th></th></tr></thead>
+        <tbody>
+          <tr data-row-id="{{ $loop->iteration }}">
+            <td class="dash-table__cell--title">لديك 7 أسئلة فتاوى تنتظر المراجعة</td>
+            <td style="font-size:.82rem">جميع الإداريين</td>
+            <td><span class="dash-badge dash-badge--pending"><span class="dash-badge__dot"></span>تنبيه</span></td>
+            <td style="font-size:.82rem;color:var(--text-muted-day)">منذ ساعة</td>
+            <td style="font-size:.84rem;font-weight:600">٣ / ٥</td>
+            <td><button type="button" class="dash-btn--delete" @click="$dispatch('open-delete', {id:1, name:'العنصر'})" title="حذف">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+                </button></div></div></div>
+  </div>
+  <x-dashboard.edit-panel formAction="/admin/notifications" />
+  <x-dashboard.edit-panel formAction="/admin/notifications" />
+  <x-dashboard.confirm-delete-modal />
+  <x-dashboard.details-modal-mobile />
+</div>
+@endsection
+
+
+
+==================================================
+FILE: \resources\views\admin\refutations\index.blade.php
+==================================================
+
+{{-- resources/views/admin/refutations/index.blade.php --}}
+@extends('layouts.dashboard')
+@section('title', 'إدارة الردود العلمية')
+@section('breadcrumb')
+  <span class="dash-breadcrumb__sep">‹</span>
+  <span class="dash-breadcrumb__current">الردود العلمية</span>
+@endsection
+
+@section('content')
+<div x-data="refutationsPage()">
+
+  <div class="dash-page-header">
+    <div class="dash-page-header__text">
+      <h1 class="dash-page-header__title">إدارة الردود العلمية</h1>
+      <p class="dash-page-header__sub">الردود على البدع والشبهات — مع نظام اعتماد من الإدارة العامة</p>
+    </div>
+    <div class="dash-page-header__actions">
+      <button class="dash-btn dash-btn--primary" @click="showForm = !showForm">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        <span x-text="showForm ? 'إخفاء النموذج' : 'إضافة رد'"></span>
+      </button>
+    </div>
+  </div>
+
+  <div x-show="showForm" x-transition style="margin-bottom:1.5rem">
+    <div class="dash-form-card">
+      <div class="dash-form-card__header">
+        <h2 class="dash-form-card__title">إضافة رد علمي جديد</h2>
+      </div>
+      <form method="POST" action="#" enctype="multipart/form-data">
+        @csrf
+        <div class="dash-form-card__body">
+          <div class="dash-field">
+            <label class="dash-label">عنوان الرد <span style="color:#c0392b;font-size:.72rem">*</span></label>
+            <input type="text" class="dash-input" placeholder="مثال: الرد على شبهة تعدد الزوجات" required>
+          </div>
+          <div class="dash-field__row">
+            <div class="dash-field">
+              <label class="dash-label">الشيخ الراد</label>
+              <select class="dash-select">
+                <option value="">اختر الشيخ...</option>
+                @foreach(['الشيخ يحيى الحجوري','الشيخ عبد العزيز','الشيخ محمد الغامدي'] as $s)
+                  <option>{{ $s }}</option>
+                @endforeach
+              </select>
+            </div>
+            <div class="dash-field">
+              <label class="dash-label">التصنيف</label>
+              <select class="dash-select">
+                <option value="">اختر التصنيف...</option>
+                @foreach(['الردود على البدع','الردود على الفرق الضالة','الردود على الشبهات','الردود على الإلحاد','الردود على الفتن المعاصرة'] as $t)
+                  <option>{{ $t }}</option>
+                @endforeach
+              </select>
+            </div>
+          </div>
+          <div class="dash-field">
+            <label class="dash-label">ملف الصوت <span style="color:#c0392b;font-size:.72rem">*</span></label>
+            <label class="dash-file-upload">
+              <div class="dash-file-upload__icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              </div>
+              <span class="dash-file-upload__label">اسحب ملف MP3 أو انقر للاختيار</span>
+              <input type="file" accept="audio/*" style="display:none">
+            </label>
+          </div>
+          <div class="dash-field__row">
+            <div class="dash-field">
+              <label class="dash-label">حالة الاعتماد</label>
+              <select class="dash-select"><option value="pending">قيد المراجعة</option><option value="approved">معتمد</option><option value="rejected">مرفوض</option></select>
+            </div>
+            <div class="dash-field">
+              <label class="dash-label">حالة النشر</label>
+              <select class="dash-select"><option value="draft">مسودة</option><option value="published">منشور</option></select>
+            </div>
+          </div>
+        </div>
+        <div class="dash-form-card__footer">
+          <button type="button" class="dash-btn dash-btn--ghost" @click="showForm=false">إلغاء</button>
+          <button type="submit" class="dash-btn dash-btn--primary">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            حفظ الرد
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="dash-table-wrap">
+    <div class="dash-table-toolbar">
+      <div class="dash-table-search">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text-muted-day);flex-shrink:0"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input class="dash-table-search__input" type="text" x-model="tableQuery" placeholder="ابحث عن رد...">
+      </div>
+      <div class="dash-filter-chips" style="padding:0">
+        @foreach(['الكل','قيد المراجعة','معتمد','مرفوض'] as $chip)
+          <button class="dash-filter-chip" :class="filterApproval==='{{ $chip }}' ? 'dash-filter-chip--active':''" @click="filterApproval='{{ $chip }}'">{{ $chip }}</button>
+        @endforeach
+      </div>
+      <span class="dash-table-count" style="margin-right:auto">إجمالي: <strong>٢٠٠</strong> رد</span>
+    </div>
+
+    <div class="dash-table-desktop">
+      <table class="dash-table">
+        <thead>
+          <tr><th>عنوان الرد</th><th>الشيخ</th><th>التصنيف</th><th>الاعتماد</th><th>النشر</th><th style="width:120px"></th></tr>
+        </thead>
+        <tbody>
+          @php $refutations = [
+            [1,'الرد على شبهة تعدد الزوجات',         'الشيخ يحيى الحجوري','الإلحاد',   'approved','معتمد',       'published','منشور', '٢ يناير ٢٠٢٥'],
+            [2,'الرد على القرآنيين',                  'الشيخ عبد العزيز',  'الشبهات',   'approved','معتمد',       'published','منشور', '٩ يناير ٢٠٢٥'],
+            [3,'الرد على حركة الإخوان المسلمين',      'الشيخ يحيى الحجوري','الفرق',    'pending', 'قيد المراجعة','draft',    'مسودة', '١٦ يناير ٢٠٢٥'],
+            [4,'الرد على بدعة القبورية',              'الشيخ محمد الغامدي','البدع',     'approved','معتمد',       'published','منشور', '٢٣ يناير ٢٠٢٥'],
+            [5,'الرد على نظرية التطور',               'الشيخ يحيى الحجوري','الإلحاد',   'rejected','مرفوض',       'draft',    'مسودة', '٣٠ يناير ٢٠٢٥'],
+          ]; @endphp
+
+          @foreach($refutations as [$id,$title,$sheikh,$cat,$approvalVal,$approvalLabel,$statusVal,$statusLabel,$date])
+          <tr data-row-id="{{ $id }}">
+            <td class="dash-table__cell--title">{{ $title }}</td>
+            <td style="font-size:.82rem;color:var(--text-muted-day)">{{ $sheikh }}</td>
+            <td><span class="dash-badge" style="background:rgba(4,95,114,0.08);color:var(--primary)">{{ $cat }}</span></td>
+            <td>
+              @if($approvalVal === 'approved')
+                <span class="dash-badge dash-badge--published"><span class="dash-badge__dot"></span>{{ $approvalLabel }}</span>
+              @elseif($approvalVal === 'pending')
+                <span class="dash-badge dash-badge--pending"><span class="dash-badge__dot"></span>{{ $approvalLabel }}</span>
+              @else
+                <span class="dash-badge dash-badge--rejected"><span class="dash-badge__dot"></span>{{ $approvalLabel }}</span>
+              @endif
+            </td>
+            <td><span class="dash-badge dash-badge--{{ $statusVal }}"><span class="dash-badge__dot"></span>{{ $statusLabel }}</span></td>
+            <td>
+              <div class="dash-row-actions">
+                <button type="button" class="dash-btn--edit"
+                        @click="$dispatch('open-edit', {
+                          id: {{ $id }}, title: '{{ addslashes($title) }}', createdAt: '{{ $date }}',
+                          fields: [
+                            { label:'عنوان الرد', name:'title', type:'text', value:'{{ addslashes($title) }}' },
+                            { label:'الشيخ الراد', name:'sheikh', type:'select', value:'{{ $sheikh }}',
+                              options:[{value:'الشيخ يحيى الحجوري',label:'الشيخ يحيى الحجوري'},{value:'الشيخ عبد العزيز',label:'الشيخ عبد العزيز'},{value:'الشيخ محمد الغامدي',label:'الشيخ محمد الغامدي'}] },
+                            { label:'التصنيف', name:'category', type:'select', value:'{{ $cat }}',
+                              options:[{value:'البدع',label:'الردود على البدع'},{value:'الفرق',label:'الردود على الفرق'},{value:'الشبهات',label:'الردود على الشبهات'},{value:'الإلحاد',label:'الردود على الإلحاد'}] },
+                            { label:'حالة الاعتماد', name:'approval', type:'select', value:'{{ $approvalVal }}',
+                              options:[{value:'pending',label:'قيد المراجعة'},{value:'approved',label:'معتمد'},{value:'rejected',label:'مرفوض'}] },
+                            { label:'حالة النشر', name:'status', type:'select', value:'{{ $statusVal }}',
+                              options:[{value:'draft',label:'مسودة'},{value:'published',label:'منشور'}] }
+                          ]
+                        })">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  تعديل
+                </button>
+                <button type="button" class="dash-btn--delete" @click="$dispatch('open-delete',{id:{{ $id }},name:'{{ addslashes($title) }}'})">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+          @endforeach
+        </tbody>
+      </table>
+    </div>
+
+    <div class="dash-table-mobile">
+      @foreach($refutations as [$id,$title,$sheikh,$cat,$approvalVal,$approvalLabel,$statusVal,$statusLabel,$date])
+        <div class="dash-mobile-row" data-row-id="{{ $id }}">
+          <div class="dash-mobile-row__main">
+            <p class="dash-mobile-row__title">{{ $title }}</p>
+            <div class="dash-mobile-row__meta">
+              <span class="dash-mobile-row__meta-item">{{ $sheikh }}</span>
+              <span class="dash-mobile-row__meta-item"><span class="dash-badge dash-badge--{{ $approvalVal }}" style="font-size:.65rem"><span class="dash-badge__dot"></span>{{ $approvalLabel }}</span></span>
+            </div>
+          </div>
+          <div class="dash-mobile-row__actions">
+            <button type="button" class="dash-btn--edit"
+                    @click="$dispatch('open-edit',{id:{{ $id }},title:'{{ addslashes($title) }}',fields:[{label:'عنوان الرد',name:'title',type:'text',value:'{{ addslashes($title) }}'},{label:'حالة النشر',name:'status',type:'select',value:'{{ $statusVal }}',options:[{value:'draft',label:'مسودة'},{value:'published',label:'منشور'}]}]})">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              تعديل
+            </button>
+            <button type="button" class="dash-btn--delete" @click="$dispatch('open-delete',{id:{{ $id }},name:'{{ addslashes($title) }}'})">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+            </button>
+          </div>
+        </div>
+      @endforeach
+    </div>
+  </div>
+
+  <x-dashboard.edit-panel formAction="/admin/refutations" />
+  <x-dashboard.confirm-delete-modal />
+  <x-dashboard.details-modal-mobile />
+
+</div>
+<script>
+function refutationsPage() { return { showForm: false, tableQuery: '', filterApproval: 'الكل' } }
+</script>
+@endsection
+
+
+
+==================================================
+FILE: \resources\views\admin\scholars\index.blade.php
+==================================================
+
+{{-- resources/views/admin/scholars/index.blade.php --}}
+@extends('layouts.dashboard')
+@section('title', 'الشيوخ والعلماء')
+@section('breadcrumb')
+  <span class="dash-breadcrumb__sep">‹</span>
+  <span class="dash-breadcrumb__current">الشيوخ والعلماء</span>
+@endsection
+
+@section('content')
+<div x-data="scholarsPage()">
+
+  <div class="dash-page-header">
+    <div class="dash-page-header__text">
+      <h1 class="dash-page-header__title">الشيوخ والعلماء</h1>
+      <p class="dash-page-header__sub">قاعدة بيانات الشيوخ المرجعية — كل إضافة محتوى تستدعي منها</p>
+    </div>
+    <div class="dash-page-header__actions">
+      <button class="dash-btn dash-btn--primary" @click="showForm = !showForm">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        <span x-text="showForm ? 'إخفاء' : 'إضافة شيخ'"></span>
+      </button>
+    </div>
+  </div>
+
+  <div x-show="showForm" x-transition style="margin-bottom:1.5rem">
+    <div class="dash-form-card">
+      <div class="dash-form-card__header">
+        <h2 class="dash-form-card__title">إضافة شيخ جديد</h2>
+      </div>
+      <form method="POST" action="#" enctype="multipart/form-data">
+        @csrf
+        <div class="dash-form-card__body">
+          <div class="dash-field__row">
+            <div class="dash-field">
+              <label class="dash-label">الاسم الكامل <span style="color:#c0392b;font-size:.72rem">*</span></label>
+              <input type="text" class="dash-input" placeholder="مثال: يحيى بن علي الحجوري" required>
+            </div>
+            <div class="dash-field">
+              <label class="dash-label">اللقب العلمي</label>
+              <input type="text" class="dash-input" placeholder="مثال: شيخ دار الحديث بدماج">
+            </div>
+          </div>
+          <div class="dash-field">
+            <label class="dash-label">صورة الشيخ <span class="dash-label__optional">(اختياري)</span></label>
+            <label class="dash-file-upload">
+              <div class="dash-file-upload__icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+              </div>
+              <span class="dash-file-upload__label">اسحب صورة أو انقر للاختيار</span>
+              <input type="file" accept="image/*" style="display:none">
+            </label>
+          </div>
+          <div class="dash-field">
+            <label class="dash-label">نبذة مختصرة <span class="dash-label__optional">(اختياري)</span></label>
+            <textarea class="dash-textarea" rows="3" placeholder="نبذة عن الشيخ وتخصصه..."></textarea>
+          </div>
+          <div class="dash-field">
+            <label class="dash-label">التخصص</label>
+            <select class="dash-select">
+              <option value="">اختر التخصص...</option>
+              @foreach(['عقيدة','فقه','حديث','تفسير','لغة','متعدد'] as $s)
+                <option>{{ $s }}</option>
+              @endforeach
+            </select>
+          </div>
+        </div>
+        <div class="dash-form-card__footer">
+          <button type="button" class="dash-btn dash-btn--ghost" @click="showForm=false">إلغاء</button>
+          <button type="submit" class="dash-btn dash-btn--primary">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            حفظ
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="dash-table-wrap">
+    <div class="dash-table-toolbar">
+      <div class="dash-table-search">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text-muted-day);flex-shrink:0"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input class="dash-table-search__input" type="text" x-model="tableQuery" placeholder="ابحث باسم الشيخ...">
+      </div>
+      <span class="dash-table-count" style="margin-right:auto">إجمالي: <strong>١٢</strong> شيخاً</span>
+    </div>
+
+    <div class="dash-table-desktop">
+      <table class="dash-table">
+        <thead>
+          <tr><th>الشيخ</th><th>اللقب العلمي</th><th>التخصص</th><th>المقررات</th><th>الفتاوى</th><th style="width:120px"></th></tr>
+        </thead>
+        <tbody>
+          @php $scholars = [
+            [1,'ي','يحيى بن علي الحجوري',  'شيخ دار الحديث بدماج',   'عقيدة وحديث', 47, 124, '٢ يناير ٢٠٢٤'],
+            [2,'ع','عبد العزيز بن مرزوق',   'أستاذ في جامعة الإيمان',  'فقه معاملات', 38, 98,  '١٠ مارس ٢٠٢٤'],
+            [3,'م','محمد بن هادي الغامدي',   'عالم سعودي',               'أصول وتفسير', 29, 74,  '٥ أبريل ٢٠٢٤'],
+            [4,'ص','صالح بن فوزان الفوزان', 'عضو اللجنة الدائمة',       'فقه عام',     52, 210, '١ يناير ٢٠٢٤'],
+          ]; @endphp
+
+          @foreach($scholars as [$id,$initial,$name,$title,$specialty,$curricula,$fatwas,$date])
+          <tr data-row-id="{{ $id }}">
+            <td>
+              <div style="display:flex;align-items:center;gap:10px">
+                <div style="width:36px;height:36px;border-radius:10px;background:rgba(4,95,114,0.1);color:var(--primary);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.9rem;flex-shrink:0;font-family:'ThmanyahSerifDisplay',serif">{{ $initial }}</div>
+                <span class="dash-table__cell--title">{{ $name }}</span>
+              </div>
+            </td>
+            <td style="font-size:.82rem;color:var(--text-muted-day)">{{ $title }}</td>
+            <td><span class="dash-badge" style="background:rgba(4,95,114,0.08);color:var(--primary)">{{ $specialty }}</span></td>
+            <td style="font-size:.84rem;font-weight:600;color:var(--text-day)">{{ $curricula }}</td>
+            <td style="font-size:.84rem;font-weight:600;color:var(--text-day)">{{ $fatwas }}</td>
+            <td>
+              <div class="dash-row-actions">
+                <button type="button" class="dash-btn--edit"
+                        @click="$dispatch('open-edit', {
+                          id: {{ $id }}, title: '{{ addslashes($name) }}', createdAt: '{{ $date }}',
+                          fields: [
+                            { label:'الاسم الكامل', name:'name', type:'text', value:'{{ addslashes($name) }}' },
+                            { label:'اللقب العلمي', name:'academic_title', type:'text', value:'{{ addslashes($title) }}' },
+                            { label:'التخصص', name:'specialty', type:'select', value:'{{ $specialty }}',
+                              options:[{value:'عقيدة وحديث',label:'عقيدة وحديث'},{value:'فقه معاملات',label:'فقه معاملات'},{value:'أصول وتفسير',label:'أصول وتفسير'},{value:'فقه عام',label:'فقه عام'},{value:'لغة',label:'لغة'}] },
+                            { label:'نبذة مختصرة', name:'bio', type:'textarea', value:'', placeholder:'نبذة عن الشيخ...' }
+                          ]
+                        })">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  تعديل
+                </button>
+                <button type="button" class="dash-btn--delete"
+                        @click="$dispatch('open-delete',{id:{{ $id }},name:'{{ addslashes($name) }}'})" title="حذف">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+          @endforeach
+        </tbody>
+      </table>
+    </div>
+
+    <div class="dash-table-mobile">
+      @foreach($scholars as [$id,$initial,$name,$title,$specialty,$curricula,$fatwas,$date])
+        <div class="dash-mobile-row" data-row-id="{{ $id }}">
+          <div style="width:36px;height:36px;border-radius:10px;background:rgba(4,95,114,0.1);color:var(--primary);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.9rem;flex-shrink:0">{{ $initial }}</div>
+          <div class="dash-mobile-row__main">
+            <p class="dash-mobile-row__title">{{ $name }}</p>
+            <div class="dash-mobile-row__meta">
+              <span class="dash-mobile-row__meta-item">{{ $title }}</span>
+              <span class="dash-mobile-row__meta-item">{{ $curricula }} مقرراً</span>
+            </div>
+          </div>
+          <div class="dash-mobile-row__actions">
+            <button type="button" class="dash-btn--edit"
+                    @click="$dispatch('open-edit',{id:{{ $id }},title:'{{ addslashes($name) }}',fields:[{label:'الاسم الكامل',name:'name',type:'text',value:'{{ addslashes($name) }}'},{label:'اللقب العلمي',name:'academic_title',type:'text',value:'{{ addslashes($title) }}'}]})">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              تعديل
+            </button>
+            <button type="button" class="dash-btn--delete" @click="$dispatch('open-delete',{id:{{ $id }},name:'{{ addslashes($name) }}'})">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+            </button>
+          </div>
+        </div>
+      @endforeach
+    </div>
+  </div>
+
+  <x-dashboard.edit-panel formAction="/admin/scholars" />
+  <x-dashboard.confirm-delete-modal />
+  <x-dashboard.details-modal-mobile />
+
+</div>
+<script>
+function scholarsPage() { return { showForm: false, tableQuery: '' } }
+</script>
+@endsection
+
+
+
+==================================================
+FILE: \resources\views\admin\sermons\index.blade.php
+==================================================
+
+{{-- resources/views/admin/sermons/index.blade.php --}}
+@extends('layouts.dashboard')
+@section('title', 'إدارة خطب الجمعة')
+@section('breadcrumb')
+  <span class="dash-breadcrumb__sep">‹</span>
+  <span class="dash-breadcrumb__current">خطب الجمعة</span>
+@endsection
+
+@section('content')
+<div x-data="sermonsPage()">
+
+  <div class="dash-page-header">
+    <div class="dash-page-header__text">
+      <h1 class="dash-page-header__title">إدارة خطب الجمعة</h1>
+      <p class="dash-page-header__sub">أرشيف خطب الجمعة المصنّفة والمفهرسة</p>
+    </div>
+    <div class="dash-page-header__actions">
+      <button class="dash-btn dash-btn--primary" @click="showForm = !showForm">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        <span x-text="showForm ? 'إخفاء النموذج' : 'إضافة خطبة'"></span>
+      </button>
+    </div>
+  </div>
+
+  <div x-show="showForm" x-transition style="margin-bottom:1.5rem">
+    <div class="dash-form-card">
+      <div class="dash-form-card__header">
+        <h2 class="dash-form-card__title">إضافة خطبة جمعة جديدة</h2>
+      </div>
+      <form method="POST" action="#" enctype="multipart/form-data">
+        @csrf
+        <div class="dash-form-card__body">
+          <div class="dash-field">
+            <label class="dash-label">عنوان الخطبة <span style="color:#c0392b;font-size:.72rem">*</span></label>
+            <input type="text" class="dash-input" placeholder="مثال: التوحيد وأنواعه الثلاثة" required>
+          </div>
+          <div class="dash-field__row">
+            <div class="dash-field">
+              <label class="dash-label">الشيخ الخطيب</label>
+              <select class="dash-select">
+                <option value="">اختر الشيخ...</option>
+                @foreach(['الشيخ يحيى الحجوري','الشيخ عبد العزيز','الشيخ محمد الغامدي'] as $s)
+                  <option>{{ $s }}</option>
+                @endforeach
+              </select>
+            </div>
+            <div class="dash-field">
+              <label class="dash-label">تاريخ الخطبة</label>
+              <input type="date" class="dash-input">
+            </div>
+          </div>
+          <div class="dash-field">
+            <label class="dash-label">التصنيف الموضوعي</label>
+            <select class="dash-select">
+              <option value="">اختر التصنيف...</option>
+              @foreach(['عقيدة','فقه','أخلاق','أحداث معاصرة'] as $t)
+                <option>{{ $t }}</option>
+              @endforeach
+            </select>
+          </div>
+          <div class="dash-field">
+            <label class="dash-label">ملف الصوت <span style="color:#c0392b;font-size:.72rem">*</span></label>
+            <label class="dash-file-upload">
+              <div class="dash-file-upload__icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              </div>
+              <span class="dash-file-upload__label">اسحب ملف MP3 أو انقر للاختيار</span>
+              <input type="file" accept="audio/*" style="display:none">
+            </label>
+          </div>
+          <div class="dash-field">
+            <label class="dash-label">نص الخطبة <span class="dash-label__optional">(اختياري)</span></label>
+            <textarea class="dash-textarea" rows="4" placeholder="نص الخطبة الكاملة أو ملخصها..."></textarea>
+          </div>
+          <div class="dash-field">
+            <label class="dash-label">حالة النشر</label>
+            <select class="dash-select"><option value="draft">مسودة</option><option value="published">منشور</option></select>
+          </div>
+        </div>
+        <div class="dash-form-card__footer">
+          <button type="button" class="dash-btn dash-btn--ghost" @click="showForm=false">إلغاء</button>
+          <button type="submit" class="dash-btn dash-btn--primary">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            حفظ الخطبة
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="dash-table-wrap">
+    <div class="dash-table-toolbar">
+      <div class="dash-table-search">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--text-muted-day);flex-shrink:0"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input class="dash-table-search__input" type="text" x-model="tableQuery" placeholder="ابحث بعنوان الخطبة أو الشيخ...">
+      </div>
+      <div class="dash-filter-chips" style="padding:0">
+        @foreach(['الكل','عقيدة','فقه','أخلاق'] as $chip)
+          <button class="dash-filter-chip" :class="filterTopic==='{{ $chip }}' ? 'dash-filter-chip--active':''" @click="filterTopic='{{ $chip }}'">{{ $chip }}</button>
+        @endforeach
+      </div>
+      <span class="dash-table-count" style="margin-right:auto">إجمالي: <strong>٣٤١</strong> خطبة</span>
+    </div>
+
+    <div class="dash-table-desktop">
+      <table class="dash-table">
+        <thead>
+          <tr>
+            <th>عنوان الخطبة</th><th>الشيخ</th><th>التاريخ</th><th>التصنيف</th><th>النشر</th><th style="width:120px"></th>
+          </tr>
+        </thead>
+        <tbody>
+          @php $sermons = [
+            [1,'التوحيد وأنواعه الثلاثة',          'الشيخ يحيى الحجوري','عقيدة','٢ يناير ٢٠٢٥',  'published','منشور'],
+            [2,'فتنة المال وكيف يتقيها المسلم',    'الشيخ عبد العزيز',   'أخلاق','٩ يناير ٢٠٢٥',  'published','منشور'],
+            [3,'الاستعداد لرمضان — الأعمال والنيات','الشيخ محمد الغامدي','فقه',  '١٦ يناير ٢٠٢٥', 'published','منشور'],
+            [4,'حقوق المسلم على أخيه',             'الشيخ يحيى الحجوري','أخلاق','٢٣ يناير ٢٠٢٥', 'draft',    'مسودة'],
+            [5,'شروط لا إله إلا الله',             'الشيخ عبد العزيز',   'عقيدة','٣٠ يناير ٢٠٢٥', 'published','منشور'],
+          ]; @endphp
+
+          @foreach($sermons as [$id,$title,$sheikh,$topic,$date,$statusVal,$statusLabel])
+          <tr data-row-id="{{ $id }}">
+            <td class="dash-table__cell--title">{{ $title }}</td>
+            <td style="font-size:.82rem;color:var(--text-muted-day)">{{ $sheikh }}</td>
+            <td style="font-size:.78rem;color:var(--text-muted-day);white-space:nowrap">{{ $date }}</td>
+            <td><span class="dash-badge" style="background:rgba(4,95,114,0.08);color:var(--primary)">{{ $topic }}</span></td>
+            <td><span class="dash-badge dash-badge--{{ $statusVal }}"><span class="dash-badge__dot"></span>{{ $statusLabel }}</span></td>
+            <td>
+              <div class="dash-row-actions">
+                <button type="button" class="dash-btn--edit"
+                        @click="$dispatch('open-edit', {
+                          id: {{ $id }}, title: '{{ addslashes($title) }}', createdAt: '{{ $date }}',
+                          fields: [
+                            { label:'عنوان الخطبة', name:'title', type:'text', value:'{{ addslashes($title) }}' },
+                            { label:'الشيخ', name:'sheikh', type:'select', value:'{{ $sheikh }}',
+                              options:[{value:'الشيخ يحيى الحجوري',label:'الشيخ يحيى الحجوري'},{value:'الشيخ عبد العزيز',label:'الشيخ عبد العزيز'},{value:'الشيخ محمد الغامدي',label:'الشيخ محمد الغامدي'}] },
+                            { label:'تاريخ الخطبة', name:'date', type:'date', value:'2025-01-02' },
+                            { label:'التصنيف', name:'topic', type:'select', value:'{{ $topic }}',
+                              options:[{value:'عقيدة',label:'عقيدة'},{value:'فقه',label:'فقه'},{value:'أخلاق',label:'أخلاق'},{value:'أحداث معاصرة',label:'أحداث معاصرة'}] },
+                            { label:'حالة النشر', name:'status', type:'select', value:'{{ $statusVal }}',
+                              options:[{value:'draft',label:'مسودة'},{value:'published',label:'منشور'}] }
+                          ]
+                        })">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  تعديل
+                </button>
+                <button type="button" class="dash-btn--delete"
+                        @click="$dispatch('open-delete',{id:{{ $id }},name:'{{ addslashes($title) }}'})" title="حذف">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+          @endforeach
+        </tbody>
+      </table>
+    </div>
+
+    <div class="dash-table-mobile">
+      @foreach($sermons as [$id,$title,$sheikh,$topic,$date,$statusVal,$statusLabel])
+        <div class="dash-mobile-row" data-row-id="{{ $id }}">
+          <div class="dash-mobile-row__main">
+            <p class="dash-mobile-row__title">{{ $title }}</p>
+            <div class="dash-mobile-row__meta">
+              <span class="dash-mobile-row__meta-item">{{ $sheikh }}</span>
+              <span class="dash-mobile-row__meta-item">{{ $date }}</span>
+              <span class="dash-mobile-row__meta-item"><span class="dash-badge dash-badge--{{ $statusVal }}" style="font-size:.65rem"><span class="dash-badge__dot"></span>{{ $statusLabel }}</span></span>
+            </div>
+          </div>
+          <div class="dash-mobile-row__actions">
+            <button type="button" class="dash-btn--edit"
+                    @click="$dispatch('open-edit',{id:{{ $id }},title:'{{ addslashes($title) }}',fields:[{label:'عنوان الخطبة',name:'title',type:'text',value:'{{ addslashes($title) }}'},{label:'حالة النشر',name:'status',type:'select',value:'{{ $statusVal }}',options:[{value:'draft',label:'مسودة'},{value:'published',label:'منشور'}]}]})">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              تعديل
+            </button>
+            <button type="button" class="dash-btn--delete" @click="$dispatch('open-delete',{id:{{ $id }},name:'{{ addslashes($title) }}'})">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+            </button>
+          </div>
+        </div>
+      @endforeach
+    </div>
+  </div>
+
+  <x-dashboard.edit-panel formAction="/admin/sermons" />
+  <x-dashboard.confirm-delete-modal />
+  <x-dashboard.details-modal-mobile />
+
+</div>
+<script>
+function sermonsPage() { return { showForm: false, tableQuery: '', filterTopic: 'الكل' } }
+</script>
+@endsection
+
+
+
+==================================================
+FILE: \resources\views\admin\settings\general.blade.php
+==================================================
+
+@extends('layouts.dashboard')
+@section('title', 'الإعدادات العامة')
+@section('breadcrumb')
+  <span class="dash-breadcrumb__sep">‹</span>
+  <span class="dash-breadcrumb__current">الإعدادات العامة</span>
+@endsection
+@section('content')
+<div x-data="{ saved: false }">
+
+  <div class="dash-page-header">
+    <div class="dash-page-header__text">
+      <h1 class="dash-page-header__title">الإعدادات العامة</h1>
+      <p class="dash-page-header__sub">إعدادات الموقع الأساسية — تؤثر على كل ما يراه الزوار</p>
+    </div>
+    <div class="dash-page-header__actions">
+      <button class="dash-btn dash-btn--primary" @click="saved=true; setTimeout(()=>saved=false,2500)">
+        <svg x-show="!saved" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+        <svg x-show="saved" width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+        <span x-text="saved ? 'تم الحفظ ✓' : 'حفظ الإعدادات'"></span>
+      </button>
+    </div>
+  </div>
+
+  {{-- Saved feedback --}}
+  <div x-show="saved" x-transition class="dash-alert dash-alert--info" style="margin-bottom:1.25rem">
+    <div class="dash-alert__icon">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
+    </div>
+    <div class="dash-alert__body">
+      <p class="dash-alert__title">تم حفظ الإعدادات بنجاح</p>
+      <p class="dash-alert__desc">التغييرات ستظهر على الموقع فوراً</p>
+    </div>
+  </div>
+
+  <div class="dash-grid-2">
+    {{-- Card 1: Site identity --}}
+    <div class="dash-form-card" style="margin-bottom:0">
+      <div class="dash-form-card__header">
+        <h2 class="dash-form-card__title">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+          هوية الموقع
+        </h2>
+      </div>
+      <div class="dash-form-card__body">
+        <div class="dash-field">
+          <label class="dash-label">اسم الموقع <span style="color:#c0392b;font-size:.72rem">*</span></label>
+          <input type="text" class="dash-input" value="مَوْسُوعَةُ أَهْلِ السُّنَّةِ وَالْجَمَاعَةِ">
+        </div>
+        <div class="dash-field">
+          <label class="dash-label">الوصف العام</label>
+          <textarea class="dash-textarea" rows="3">الموسوعة العلمية الشاملة لمحتوى أهل السنة والجماعة — مقررات ودروس وفتاوى وكتب ومحاضرات.</textarea>
+        </div>
+        <div class="dash-field__row">
+          <div class="dash-field">
+            <label class="dash-label">شعار الموقع (Logo)</label>
+            <label class="dash-file-upload">
+              <div class="dash-file-upload__icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+                  <polyline points="21 15 16 10 5 21"/>
+                </svg>
+              </div>
+              <span class="dash-file-upload__label">الشعار الحالي: logo.svg</span>
+              <input type="file" accept="image/*" style="display:none">
+            </label>
+          </div>
+          <div class="dash-field">
+            <label class="dash-label">Favicon</label>
+            <label class="dash-file-upload">
+              <div class="dash-file-upload__icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+                  <polyline points="21 15 16 10 5 21"/>
+                </svg>
+              </div>
+              <span class="dash-file-upload__label">favicon.ico</span>
+              <input type="file" accept=".ico,image/*" style="display:none">
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {{-- Card 2: Contact info --}}
+    <div class="dash-form-card" style="margin-bottom:0">
+      <div class="dash-form-card__header">
+        <h2 class="dash-form-card__title">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.56 1.32h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 9a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7a2 2 0 0 1 1.72 2.03z"/>
+          </svg>
+          بيانات التواصل
+        </h2>
+      </div>
+      <div class="dash-form-card__body">
+        <div class="dash-field">
+          <label class="dash-label">البريد الإلكتروني الرسمي</label>
+          <input type="email" class="dash-input" value="info@mawsoa.com">
+        </div>
+        <div class="dash-field">
+          <label class="dash-label">رابط تيليغرام <span class="dash-label__optional">(اختياري)</span></label>
+          <input type="url" class="dash-input" placeholder="https://t.me/...">
+        </div>
+        <div class="dash-field">
+          <label class="dash-label">رابط يوتيوب <span class="dash-label__optional">(اختياري)</span></label>
+          <input type="url" class="dash-input" placeholder="https://youtube.com/@...">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top:1.5rem">
+    {{-- Card 3: System messages --}}
+    <div class="dash-form-card">
+      <div class="dash-form-card__header">
+        <h2 class="dash-form-card__title">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          </svg>
+          رسائل النظام
+        </h2>
+      </div>
+      <div class="dash-form-card__body">
+        <div class="dash-field">
+          <label class="dash-label">رسالة الترحيب بالزوار</label>
+          <textarea class="dash-textarea" rows="2">أهلاً بك في موسوعة أهل السنة والجماعة — نسأل الله أن ينفعك بما تجد هنا.</textarea>
+          <p style="font-size:.72rem;color:var(--text-muted-day);margin-top:4px">تظهر في الصفحة الرئيسية تحت العنوان مباشرةً</p>
+        </div>
+        <div class="dash-field">
+          <label class="dash-label">رسالة نجاح إرسال سؤال الفتوى</label>
+          <textarea class="dash-textarea" rows="2">جزاك الله خيراً — سؤالك في طريقه للمراجعة. إليك فتاوى مشابهة بينما تنتظر.</textarea>
+          <p style="font-size:.72rem;color:var(--text-muted-day);margin-top:4px">Peak-End Rule — هذه اللحظة هي ذاكرة الزائر عن الموقع</p>
+        </div>
+      </div>
+      <div class="dash-form-card__footer">
+        <button type="button" class="dash-btn dash-btn--ghost" onclick="location.reload()">إعادة ضبط</button>
+        <button type="button" class="dash-btn dash-btn--primary" @click="saved=true; setTimeout(()=>saved=false,2500)">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+          حفظ الإعدادات
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>
+@endsection
+
+
+
+==================================================
+FILE: \resources\views\admin\settings\profile.blade.php
+==================================================
+
+@extends('layouts.dashboard')
+@section('title', 'حسابي')
+@section('breadcrumb')
+  <span class="dash-breadcrumb__sep">‹</span>
+  <span class="dash-breadcrumb__current">حسابي</span>
+@endsection
+@section('content')
+<div x-data="{ showCurrentPass: false, showNewPass: false, showConfirmPass: false, saved: false }">
+
+  <div class="dash-page-header">
+    <div class="dash-page-header__text">
+      <h1 class="dash-page-header__title">حسابي</h1>
+      <p class="dash-page-header__sub">إعدادات حسابك الشخصي وكلمة المرور</p>
+    </div>
+  </div>
+
+  {{-- Saved feedback --}}
+  <div x-show="saved" x-transition class="dash-alert dash-alert--info" style="margin-bottom:1.25rem">
+    <div class="dash-alert__icon">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
+    </div>
+    <div class="dash-alert__body">
+      <p class="dash-alert__title">تم تحديث بياناتك بنجاح</p>
+    </div>
+  </div>
+
+  <div class="dash-grid-2">
+
+    {{-- Profile info --}}
+    <div class="dash-form-card" style="margin-bottom:0">
+      <div class="dash-form-card__header">
+        <h2 class="dash-form-card__title">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+          </svg>
+          المعلومات الشخصية
+        </h2>
+      </div>
+      <form method="POST" action="#" enctype="multipart/form-data">
+        @csrf @method('PUT')
+        <div class="dash-form-card__body">
+
+          {{-- Avatar --}}
+          <div style="display:flex;align-items:center;gap:1rem;padding:.5rem 0">
+            <div style="width:64px;height:64px;border-radius:14px;background:rgba(4,95,114,0.1);color:var(--primary);display:flex;align-items:center;justify-content:center;font-size:1.75rem;font-weight:700;font-family:'ThmanyahSerifDisplay',serif;flex-shrink:0">
+              م
+            </div>
+            <div>
+              <p style="font-size:.87rem;font-weight:600;color:var(--text-day);margin-bottom:4px">محمد العدني</p>
+              <label class="dash-btn dash-btn--ghost dash-btn--sm" style="cursor:pointer">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+                تغيير الصورة
+                <input type="file" accept="image/*" style="display:none">
+              </label>
+            </div>
+          </div>
+
+          <div class="dash-field">
+            <label class="dash-label">الاسم الكامل</label>
+            <input type="text" class="dash-input" value="محمد العدني">
+          </div>
+
+          <div class="dash-field">
+            <label class="dash-label">البريد الإلكتروني</label>
+            <input type="email" class="dash-input" value="super_admin@mawsoa.com">
+          </div>
+
+          <div class="dash-field">
+            <label class="dash-label">الدور الحالي</label>
+            <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid var(--border-day);border-radius:9px;background:var(--bg-day)">
+              <span class="dash-badge" style="background:rgba(4,95,114,0.1);color:var(--primary)">
+                <span class="dash-badge__dot"></span>Super Admin
+              </span>
+              <span style="font-size:.76rem;color:var(--text-muted-day)">— لا يمكن تغييره من هنا</span>
+            </div>
+          </div>
+
+        </div>
+        <div class="dash-form-card__footer">
+          <button type="submit" class="dash-btn dash-btn--primary"
+                  @click.prevent="saved=true; setTimeout(()=>saved=false,2500)">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            حفظ التغييرات
+          </button>
+        </div>
+      </form>
+    </div>
+
+    {{-- Password change --}}
+    <div class="dash-form-card" style="margin-bottom:0">
+      <div class="dash-form-card__header">
+        <h2 class="dash-form-card__title">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+          تغيير كلمة المرور
+        </h2>
+      </div>
+      <form method="POST" action="#">
+        @csrf @method('PUT')
+        <div class="dash-form-card__body">
+
+          <div class="dash-field">
+            <label class="dash-label">كلمة المرور الحالية</label>
+            <div class="dash-password-wrap">
+              <input :type="showCurrentPass ? 'text' : 'password'" class="dash-input" placeholder="أدخل كلمة المرور الحالية">
+              <button type="button" class="dash-password-toggle" @click="showCurrentPass = !showCurrentPass">
+                <svg x-show="!showCurrentPass" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                </svg>
+                <svg x-show="showCurrentPass" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                  <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                  <line x1="1" y1="1" x2="23" y2="23"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="dash-field">
+            <label class="dash-label">كلمة المرور الجديدة</label>
+            <div class="dash-password-wrap">
+              <input :type="showNewPass ? 'text' : 'password'" class="dash-input" placeholder="٨ أحرف على الأقل">
+              <button type="button" class="dash-password-toggle" @click="showNewPass = !showNewPass">
+                <svg x-show="!showNewPass" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                </svg>
+                <svg x-show="showNewPass" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                  <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                  <line x1="1" y1="1" x2="23" y2="23"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="dash-field">
+            <label class="dash-label">تأكيد كلمة المرور</label>
+            <div class="dash-password-wrap">
+              <input :type="showConfirmPass ? 'text' : 'password'" class="dash-input" placeholder="أعد كتابة كلمة المرور الجديدة">
+              <button type="button" class="dash-password-toggle" @click="showConfirmPass = !showConfirmPass">
+                <svg x-show="!showConfirmPass" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                </svg>
+                <svg x-show="showConfirmPass" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                  <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                  <line x1="1" y1="1" x2="23" y2="23"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          {{-- Password requirements --}}
+          <div style="background:var(--bg-day);border:1px solid var(--border-day);border-radius:9px;padding:.875rem;font-size:.76rem;color:var(--text-muted-day);line-height:2">
+            <p style="font-weight:600;margin-bottom:4px;color:var(--text-day)">متطلبات كلمة المرور:</p>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px 1rem">
+              <span>✓ ٨ أحرف على الأقل</span>
+              <span>✓ حرف كبير واحد</span>
+              <span>✓ رقم واحد</span>
+              <span>✓ رمز خاص (@, !, #...)</span>
+            </div>
+          </div>
+
+        </div>
+        <div class="dash-form-card__footer">
+          <button type="submit" class="dash-btn dash-btn--primary"
+                  @click.prevent="saved=true; setTimeout(()=>saved=false,2500)">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+            تغيير كلمة المرور
+          </button>
+        </div>
+      </form>
+    </div>
+
+  </div>
+
+</div>
+@endsection
+
+
+
+==================================================
+FILE: \resources\views\admin\users\index.blade.php
+==================================================
+
+{{-- resources/views/admin/users/index.blade.php --}}
+@extends('layouts.dashboard')
+@section('title', 'المستخدمون')
+@section('breadcrumb')
+  <span class="dash-breadcrumb__sep">‹</span>
+  <span class="dash-breadcrumb__current">المستخدمون</span>
+@endsection
+
+@section('content')
+<div x-data="usersPage()">
+
+  {{-- Header --}}
+  <div class="dash-page-header">
+    <div class="dash-page-header__text">
+      <h1 class="dash-page-header__title">إدارة المستخدمين</h1>
+      <p class="dash-page-header__sub">حسابات الفريق الإداري — إضافة وتحديد الأدوار والصلاحيات</p>
+    </div>
+    <div class="dash-page-header__actions">
+      <button class="dash-btn dash-btn--primary" @click="showForm = !showForm">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        <span x-text="showForm ? 'إخفاء النموذج' : 'إضافة مستخدم'"></span>
+      </button>
+    </div>
+  </div>
+
+  {{-- Add Form --}}
+  <div x-show="showForm" x-transition style="margin-bottom:1.5rem">
+    <div class="dash-form-card">
+      <div class="dash-form-card__header">
+        <h2 class="dash-form-card__title">إضافة مستخدم جديد</h2>
+      </div>
+      <form method="POST" action="#" x-data="{ showPass: false, role: 'admin' }">
+        @csrf
+        <div class="dash-form-card__body">
+
+          <div class="dash-field__row">
+            <div class="dash-field">
+              <label class="dash-label">الاسم الكامل <span style="color:#c0392b;font-size:.72rem">*</span></label>
+              <input type="text" class="dash-input" placeholder="مثال: أحمد المنصوري" required>
+            </div>
+            <div class="dash-field">
+              <label class="dash-label">البريد الإلكتروني <span style="color:#c0392b;font-size:.72rem">*</span></label>
+              <input type="email" class="dash-input" placeholder="admin@mawsoa.com" required>
+            </div>
+          </div>
+
+          <div class="dash-field">
+            <label class="dash-label">كلمة المرور</label>
+            <div style="display:flex;gap:8px;align-items:center">
+              <div class="dash-password-wrap" style="flex:1">
+                <input :type="showPass ? 'text' : 'password'" class="dash-input"
+                       x-ref="passInput" value="Mawsoa@2025!">
+                <button type="button" class="dash-password-toggle" @click="showPass = !showPass">
+                  <svg x-show="!showPass" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                  </svg>
+                  <svg x-show="showPass" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                    <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                    <line x1="1" y1="1" x2="23" y2="23"/>
+                  </svg>
+                </button>
+              </div>
+              <button type="button" class="dash-copy-btn"
+                      @click="navigator.clipboard.writeText($refs.passInput.value); $el.textContent = 'تم ✓'">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="9" y="9" width="13" height="13" rx="2"/>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                </svg>
+                نسخ
+              </button>
+              <button type="button" class="dash-btn dash-btn--ghost dash-btn--sm"
+                      @click="$refs.passInput.value = 'Mawsoa' + Math.random().toString(36).slice(-6).toUpperCase() + '1' + String.fromCharCode(64)">
+                توليد تلقائي
+              </button>
+            </div>
+          </div>
+
+          <div class="dash-field__row">
+            <div class="dash-field">
+              <label class="dash-label">الدور</label>
+              <select class="dash-select" x-model="role">
+                <option value="admin">Admin</option>
+                <option value="general_admin">General Admin</option>
+              </select>
+            </div>
+            <div class="dash-field">
+              <label class="dash-label">حالة الحساب</label>
+              <select class="dash-select">
+                <option value="active">نشط</option>
+                <option value="inactive">معطّل</option>
+              </select>
+            </div>
+          </div>
+
+          <div x-show="role === 'admin'" x-transition>
+            <div class="dash-field">
+              <label class="dash-label">الصلاحيات التفصيلية</label>
+              <div style="background:var(--bg-day);border:1px solid var(--border-day);border-radius:10px;padding:1rem">
+                <p style="font-size:.73rem;font-weight:700;color:var(--text-muted-day);letter-spacing:.06em;text-transform:uppercase;margin-bottom:.625rem">المحتوى</p>
+                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:6px;margin-bottom:.875rem">
+                  @foreach(['إدارة المقررات','إدارة الدروس','إدارة الخطب','إدارة المحاضرات','إدارة الردود','إدارة المكتبة'] as $perm)
+                    <label class="dash-checkbox-item">
+                      <input type="checkbox" class="dash-checkbox-item__input" checked>
+                      <span class="dash-checkbox-item__label">{{ $perm }}</span>
+                    </label>
+                  @endforeach
+                </div>
+                <p style="font-size:.73rem;font-weight:700;color:var(--text-muted-day);letter-spacing:.06em;text-transform:uppercase;margin-bottom:.625rem">أخرى</p>
+                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:6px">
+                  @foreach(['إدارة الفتاوى','إضافة الشيوخ','إرسال الإشعارات'] as $perm)
+                    <label class="dash-checkbox-item">
+                      <input type="checkbox" class="dash-checkbox-item__input">
+                      <span class="dash-checkbox-item__label">{{ $perm }}</span>
+                    </label>
+                  @endforeach
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+        <div class="dash-form-card__footer">
+          <button type="button" class="dash-btn dash-btn--ghost" @click="showForm=false">إلغاء</button>
+          <button type="submit" class="dash-btn dash-btn--primary">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            إنشاء الحساب
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  {{-- Table --}}
+  <div class="dash-table-wrap">
+    <div class="dash-table-toolbar">
+      <div class="dash-table-search">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             style="color:var(--text-muted-day);flex-shrink:0">
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+        <input class="dash-table-search__input" type="text" x-model="tableQuery"
+               placeholder="ابحث باسم أو بريد المستخدم...">
+      </div>
+      <div class="dash-filter-chips" style="padding:0">
+        @foreach(['الكل','Admin','General Admin','نشط','معطّل'] as $chip)
+          <button class="dash-filter-chip"
+                  :class="activeChip === '{{ $chip }}' ? 'dash-filter-chip--active' : ''"
+                  @click="activeChip = '{{ $chip }}'">{{ $chip }}</button>
+        @endforeach
+      </div>
+      <span class="dash-table-count" style="margin-right:auto">إجمالي: <strong>٥</strong> مستخدمين</span>
+    </div>
+
+    {{-- Desktop --}}
+    <div class="dash-table-desktop">
+      <table class="dash-table">
+        <thead>
+          <tr>
+            <th>المستخدم</th>
+            <th>الدور</th>
+            <th>المحتويات المضافة</th>
+            <th>آخر دخول</th>
+            <th>الحالة</th>
+            <th style="width:130px"></th>
+          </tr>
+        </thead>
+        <tbody>
+          @php
+          $users = [
+            [1,'م','محمد العدني',    'super_admin@mawsoa.com','Super Admin',  '٢٤٧','الآن',        'active',  'نشط'],
+            [2,'أ','أحمد المنصوري','a.mansouri@mawsoa.com', 'General Admin','—',  'منذ ساعتين', 'active',  'نشط'],
+            [3,'خ','خالد السالم',  'k.salem@mawsoa.com',    'Admin',        '٨٩', 'أمس',         'active',  'نشط'],
+            [4,'ف','فاطمة الزهراء','f.zahraa@mawsoa.com',  'Admin',        '١٣٤','منذ ٣ أيام',  'active',  'نشط'],
+            [5,'ع','عبد الله الحربي','a.harbi@mawsoa.com',  'Admin',        '٤٢', 'منذ أسبوعين','inactive','معطّل'],
+          ];
+          @endphp
+
+          @foreach($users as [$id,$initial,$name,$email,$role,$added,$lastLogin,$statusVal,$statusLabel])
+          <tr data-row-id="{{ $id }}">
+            <td>
+              <div style="display:flex;align-items:center;gap:10px">
+                <div style="width:34px;height:34px;border-radius:9px;background:rgba(4,95,114,0.1);
+                             color:var(--primary);display:flex;align-items:center;justify-content:center;
+                             font-weight:700;font-size:.85rem;flex-shrink:0;font-family:'ThmanyahSerifDisplay',serif">
+                  {{ $initial }}
+                </div>
+                <div>
+                  <p style="font-size:.87rem;font-weight:600;color:var(--text-day);margin-bottom:1px">{{ $name }}</p>
+                  <p style="font-size:.73rem;color:var(--text-muted-day)">{{ $email }}</p>
+                </div>
+              </div>
+            </td>
+            <td>
+              @if($role === 'Super Admin')
+                <span class="dash-badge" style="background:rgba(4,95,114,0.1);color:var(--primary)">
+                  <span class="dash-badge__dot"></span>{{ $role }}
+                </span>
+              @elseif($role === 'General Admin')
+                <span class="dash-badge dash-badge--pending"><span class="dash-badge__dot"></span>{{ $role }}</span>
+              @else
+                <span class="dash-badge dash-badge--draft"><span class="dash-badge__dot"></span>{{ $role }}</span>
+              @endif
+            </td>
+            <td style="font-size:.84rem;font-weight:{{ $role !== 'General Admin' ? '600' : '400' }};
+                        color:{{ $role === 'General Admin' ? 'var(--text-muted-day)' : 'var(--text-day)' }}">
+              {{ $added }}
+            </td>
+            <td style="font-size:.8rem;color:var(--text-muted-day)">{{ $lastLogin }}</td>
+            <td>
+              <span class="dash-badge dash-badge--{{ $statusVal }}">
+                <span class="dash-badge__dot"></span>{{ $statusLabel }}
+              </span>
+            </td>
+            <td>
+              <div class="dash-row-actions">
+                <button type="button" class="dash-btn--edit"
+                        @click="$dispatch('open-edit', {
+                          id: {{ $id }},
+                          title: '{{ addslashes($name) }}',
+                          createdAt: '—',
+                          fields: [
+                            { label:'الاسم الكامل', name:'name', type:'text', value:'{{ addslashes($name) }}' },
+                            { label:'البريد الإلكتروني', name:'email', type:'email', value:'{{ $email }}' },
+                            { label:'الدور', name:'role', type:'select', value:'{{ Str::snake($role) }}',
+                              options:[
+                                {value:'admin',label:'Admin'},
+                                {value:'general_admin',label:'General Admin'}
+                              ]
+                            },
+                            { label:'حالة الحساب', name:'status', type:'select', value:'{{ $statusVal }}',
+                              options:[{value:'active',label:'نشط'},{value:'inactive',label:'معطّل'}]
+                            }
+                          ]
+                        })">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                  </svg>
+                  تعديل
+                </button>
+                @if($role !== 'Super Admin')
+                <button type="button" class="dash-btn--delete"
+                        @click="$dispatch('open-delete',{id:{{ $id }},name:'{{ addslashes($name) }}'})"
+                        title="حذف">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                       stroke-width="2" stroke-linecap="round">
+                    <polyline points="3 6 5 6 21 6"/>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
+                  </svg>
+                </button>
+                @endif
+              </div>
+            </td>
+          </tr>
+          @endforeach
+        </tbody>
+      </table>
+    </div>
+
+    {{-- Mobile --}}
+    <div class="dash-table-mobile">
+      @foreach($users as [$id,$initial,$name,$email,$role,$added,$lastLogin,$statusVal,$statusLabel])
+        <div class="dash-mobile-row" data-row-id="{{ $id }}">
+          <div style="width:36px;height:36px;border-radius:9px;background:rgba(4,95,114,0.1);
+                       color:var(--primary);display:flex;align-items:center;justify-content:center;
+                       font-weight:700;font-size:.9rem;flex-shrink:0">{{ $initial }}</div>
+          <div class="dash-mobile-row__main">
+            <p class="dash-mobile-row__title">{{ $name }}</p>
+            <div class="dash-mobile-row__meta">
+              <span class="dash-mobile-row__meta-item">{{ $role }}</span>
+              <span class="dash-mobile-row__meta-item">
+                <span class="dash-badge dash-badge--{{ $statusVal }}" style="font-size:.65rem">
+                  <span class="dash-badge__dot"></span>{{ $statusLabel }}
+                </span>
+              </span>
+            </div>
+          </div>
+          <div class="dash-mobile-row__actions">
+            <button type="button" class="dash-btn--edit"
+                    @click="$dispatch('open-edit',{
+                      id:{{ $id }}, title:'{{ addslashes($name) }}',
+                      fields:[
+                        {label:'الاسم الكامل',name:'name',type:'text',value:'{{ addslashes($name) }}'},
+                        {label:'البريد',name:'email',type:'email',value:'{{ $email }}'},
+                        {label:'الدور',name:'role',type:'select',value:'{{ Str::snake($role) }}',
+                          options:[{value:'admin',label:'Admin'},{value:'general_admin',label:'General Admin'}]},
+                        {label:'الحالة',name:'status',type:'select',value:'{{ $statusVal }}',
+                          options:[{value:'active',label:'نشط'},{value:'inactive',label:'معطّل'}]}
+                      ]
+                    })">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+              </svg>
+              تعديل
+            </button>
+            @if($role !== 'Super Admin')
+            <button type="button" class="dash-btn--delete"
+                    @click="$dispatch('open-delete',{id:{{ $id }},name:'{{ addslashes($name) }}'})">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="2" stroke-linecap="round">
+                <polyline points="3 6 5 6 21 6"/>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/>
+              </svg>
+            </button>
+            @endif
+          </div>
+        </div>
+      @endforeach
+    </div>
+  </div>
+
+  <x-dashboard.edit-panel formAction="/admin/users" />
+  <x-dashboard.confirm-delete-modal />
+  <x-dashboard.details-modal-mobile />
+
+</div>
+
+<script>
+function usersPage() {
+  return { showForm: false, tableQuery: '', activeChip: 'الكل' }
+}
+</script>
+@endsection
+
+
+

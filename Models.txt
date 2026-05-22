@@ -1,0 +1,463 @@
+==================================================
+FILE: \app\Models\AdminNotification.php
+==================================================
+
+<?php
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+
+class AdminNotification extends Model {
+    use HasUuids, SoftDeletes;
+
+    protected $fillable = [
+        'sent_by', 'target_role', 'target_user_id',
+        'message', 'level', 'expires_at'
+    ];
+
+    protected $casts = ['expires_at' => 'datetime'];
+
+    public function sentBy() { return $this->belongsTo(AdminUser::class, 'sent_by'); }
+}
+
+
+
+==================================================
+FILE: \app\Models\AdminUser.php
+==================================================
+
+<?php
+namespace App\Models;
+
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Notifications\Notifiable;
+
+class AdminUser extends Authenticatable {
+    use HasUuids, SoftDeletes, Notifiable;
+
+    protected $fillable = [
+        'name', 'email', 'password', 'role', 'permissions', 'is_active'
+    ];
+
+    protected $hidden = ['password', 'remember_token'];
+
+    protected $casts = [
+        'permissions'   => 'array',
+        'is_active'     => 'boolean',
+        'last_login_at' => 'datetime',
+    ];
+
+    public function isSuperAdmin(): bool   { return $this->role === 'super_admin'; }
+    public function isGeneralAdmin(): bool { return $this->role === 'general_admin'; }
+    public function isAdmin(): bool        { return $this->role === 'admin'; }
+
+    public function hasPermission(string $permission): bool {
+        if ($this->isSuperAdmin()) return true;
+        return in_array($permission, $this->permissions ?? []);
+    }
+
+    public function tokens() {
+        return $this->morphMany(\Laravel\Sanctum\PersonalAccessToken::class, 'tokenable');
+    }
+
+    public function createToken(string $name, array $abilities = ['*']) {
+        $token = $this->tokens()->create([
+            'name'      => $name,
+            'token'     => hash('sha256', $plaintext = \Illuminate\Support\Str::random(40)),
+            'abilities' => $abilities,
+        ]);
+        return new \Laravel\Sanctum\NewAccessToken($token, $token->getKey() . '|' . $plaintext);
+    }
+}
+
+
+
+==================================================
+FILE: \app\Models\AuditLog.php
+==================================================
+
+<?php
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+
+class AuditLog extends Model {
+    use HasUuids;
+
+    public $timestamps = false;
+
+    protected $fillable = [
+        'admin_user_id', 'action', 'model_type', 'model_id',
+        'before', 'after', 'ip_address', 'user_agent', 'created_at'
+    ];
+
+    protected $casts = [
+        'before'     => 'array',
+        'after'      => 'array',
+        'created_at' => 'datetime',
+    ];
+
+    public function admin() {
+        return $this->belongsTo(AdminUser::class, 'admin_user_id');
+    }
+}
+
+
+
+
+==================================================
+FILE: \app\Models\Book.php
+==================================================
+
+<?php
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use App\Traits\Auditable;
+
+class Book extends Model {
+    use HasUuids, SoftDeletes, Auditable;
+    protected $fillable = [
+        'category_id','title','slug','author','description','book_type','level',
+        'cover_image_path','pdf_path','allow_online_reading','allow_download',
+        'download_count','status','created_by','updated_by'
+    ];
+    protected $casts = [
+        'allow_online_reading' => 'boolean',
+        'allow_download'       => 'boolean',
+    ];
+    public function category() { return $this->belongsTo(Category::class); }
+    public function chapters() { return $this->hasMany(BookChapter::class)->orderBy('sort_order'); }
+    public function scopePublished($q) { return $q->where('status', 'published'); }
+}
+
+
+
+==================================================
+FILE: \app\Models\BookChapter.php
+==================================================
+
+<?php
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+
+class BookChapter extends Model {
+    use HasUuids, SoftDeletes;
+
+    protected $fillable = ['book_id', 'title', 'sort_order', 'content'];
+
+    public function book() { return $this->belongsTo(Book::class); }
+}
+
+
+
+
+==================================================
+FILE: \app\Models\Category.php
+==================================================
+
+<?php
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use App\Traits\Auditable;
+
+class Category extends Model {
+    use HasUuids, SoftDeletes, Auditable;
+
+    protected $fillable = [
+        'name', 'slug', 'type', 'color', 'icon', 'sort_order', 'is_active'
+    ];
+
+    protected $casts = ['is_active' => 'boolean'];
+
+    public function scopeOfType($query, string $type) {
+        return $query->where('type', $type)
+                     ->where('is_active', true)
+                     ->orderBy('sort_order');
+    }
+}
+
+
+
+
+==================================================
+FILE: \app\Models\Curriculum.php
+==================================================
+
+<?php
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use App\Traits\Auditable;
+
+class Curriculum extends Model {
+    use HasUuids, SoftDeletes, Auditable;
+    protected $fillable = [
+        'scholar_id','category_id','book_title','book_author','slug',
+        'description','level','cover_image_path','book_pdf_path','status','created_by','updated_by'
+    ];
+    public function scholar()   { return $this->belongsTo(Scholar::class); }
+    public function category()  { return $this->belongsTo(Category::class); }
+    public function createdBy() { return $this->belongsTo(AdminUser::class, 'created_by'); }
+    public function lessons() {
+        return $this->hasMany(Lesson::class, 'parent_id')
+                    ->where('type', 'curriculum')
+                    ->orderBy('sort_order');
+    }
+    public function scopePublished($q) { return $q->where('status', 'published'); }
+}
+
+
+
+==================================================
+FILE: \app\Models\Fatwa.php
+==================================================
+
+<?php
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use App\Traits\Auditable;
+
+class Fatwa extends Model {
+    use HasUuids, SoftDeletes, Auditable;
+    protected $fillable = [
+        'scholar_id','category_id','question_title','slug','question_body',
+        'ruling','evidence','detail','fatwa_date','status','view_count','created_by','updated_by'
+    ];
+    protected $casts = ['fatwa_date' => 'date'];
+    public function scholar()   { return $this->belongsTo(Scholar::class); }
+    public function category()  { return $this->belongsTo(Category::class); }
+    public function createdBy() { return $this->belongsTo(AdminUser::class, 'created_by'); }
+    public function scopePublished($q) { return $q->where('status', 'published'); }
+}
+
+
+
+==================================================
+FILE: \app\Models\FatwaQuestion.php
+==================================================
+
+<?php
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+
+class FatwaQuestion extends Model {
+    use HasUuids, SoftDeletes;
+
+    protected $fillable = [
+        'title', 'question_body', 'sender_name', 'sender_email',
+        'sender_ip', 'status', 'assigned_to', 'fatwa_id'
+    ];
+
+    public function assignedTo() { return $this->belongsTo(AdminUser::class, 'assigned_to'); }
+    public function fatwa()      { return $this->belongsTo(Fatwa::class); }
+    public function scopeNew($q) { return $q->where('status', 'new'); }
+}
+
+
+
+
+==================================================
+FILE: \app\Models\LectureGroup.php
+==================================================
+
+<?php
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use App\Traits\Auditable;
+
+class LectureGroup extends Model {
+    use HasUuids, SoftDeletes, Auditable;
+
+    protected $fillable = [
+        'title', 'slug', 'scholar_id', 'category_id',
+        'is_multi_part', 'status', 'created_by'
+    ];
+
+    protected $casts = ['is_multi_part' => 'boolean'];
+
+    public function scholar() { return $this->belongsTo(Scholar::class); }
+
+    public function parts() {
+        return $this->hasMany(Lesson::class, 'parent_id')
+                    ->where('type', 'lecture')
+                    ->orderBy('sort_order');
+    }
+}
+
+
+
+
+==================================================
+FILE: \app\Models\Lesson.php
+==================================================
+
+<?php
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use App\Traits\Auditable;
+
+class Lesson extends Model {
+    use HasUuids, SoftDeletes, Auditable;
+    protected $fillable = [
+        'type','parent_id','scholar_id','category_id','title','slug','body',
+        'audio_path','audio_url','audio_duration','sort_order','status',
+        'listen_count','created_by','updated_by'
+    ];
+    public function scholar()          { return $this->belongsTo(Scholar::class); }
+    public function category()         { return $this->belongsTo(Category::class); }
+    public function curriculum()       { return $this->belongsTo(Curriculum::class, 'parent_id'); }
+    public function sermonDetail()     { return $this->hasOne(SermonDetail::class); }
+    public function refutationDetail() { return $this->hasOne(RefutationDetail::class); }
+    public function createdBy()        { return $this->belongsTo(AdminUser::class, 'created_by'); }
+    public function scopePublished($q)         { return $q->where('status', 'published'); }
+    public function scopeOfType($q, string $t) { return $q->where('type', $t); }
+}
+
+
+
+==================================================
+FILE: \app\Models\RefutationDetail.php
+==================================================
+
+<?php
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+
+class RefutationDetail extends Model {
+    use HasUuids;
+
+    protected $fillable = [
+        'lesson_id', 'refutation_type', 'approval_status',
+        'reviewed_by', 'review_note', 'reviewed_at'
+    ];
+
+    protected $casts = ['reviewed_at' => 'datetime'];
+
+    public function lesson()     { return $this->belongsTo(Lesson::class); }
+    public function reviewedBy() { return $this->belongsTo(AdminUser::class, 'reviewed_by'); }
+}
+
+
+
+
+==================================================
+FILE: \app\Models\Scholar.php
+==================================================
+
+<?php
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use App\Traits\Auditable;
+
+class Scholar extends Model {
+    use HasUuids, SoftDeletes, Auditable;
+
+    protected $fillable = [
+        'name', 'title', 'bio', 'photo_path', 'specialization', 'is_active'
+    ];
+
+    protected $casts = ['is_active' => 'boolean'];
+
+    public function curricula() { return $this->hasMany(Curriculum::class); }
+    public function lessons()   { return $this->hasMany(Lesson::class); }
+    public function fatwas()    { return $this->hasMany(Fatwa::class); }
+}
+
+
+
+
+==================================================
+FILE: \app\Models\SermonDetail.php
+==================================================
+
+<?php
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+
+class SermonDetail extends Model {
+    use HasUuids;
+
+    protected $fillable = ['lesson_id', 'sermon_date'];
+    protected $casts    = ['sermon_date' => 'date'];
+
+    public function lesson() { return $this->belongsTo(Lesson::class); }
+}
+
+
+
+
+==================================================
+FILE: \app\Models\User.php
+==================================================
+
+<?php
+
+namespace App\Models;
+
+// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Database\Factories\UserFactory;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+
+#[Fillable(['name', 'email', 'password'])]
+#[Hidden(['password', 'remember_token'])]
+class User extends Authenticatable
+{
+    /** @use HasFactory<UserFactory> */
+    use HasFactory, Notifiable;
+
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'email_verified_at' => 'datetime',
+            'password' => 'hashed',
+        ];
+    }
+}
+
+
+
+
