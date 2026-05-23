@@ -117,12 +117,12 @@
                placeholder="ابحث بعنوان الدرس أو المقرر...">
       </div>
       <div class="dash-filter-chips" style="padding:0">
-         as $chip)
-          <button class="dash-filter-chip"
-                  :class="filterStatus==='{{ $chip }}' ? 'dash-filter-chip--active':''"
-                  @click="filterStatus='{{ $chip }}'">{{ $chip }}</button>
-        @endforeach
-      </div>
+  @foreach(['الكل','منشور','مسودة'] as $chip)
+    <button class="dash-filter-chip"
+            :class="filterStatus==='{{ $chip }}' ? 'dash-filter-chip--active':''"
+            @click="filterStatus='{{ $chip }}'">{{ $chip }}</button>
+  @endforeach
+</div>
       <span class="dash-table-count" style="margin-right:auto">إجمالي: <strong>٢٠٤٨</strong> درساً</span>
     </div>
 
