@@ -978,7 +978,7 @@ FILE: \resources\views\admin\fatwas\published\index.blade.php
               <label class="dash-label">التصنيف</label>
               <select class="dash-select">
                 <option value="">اختر التصنيف...</option>
-                @foreach(['عقيدة','فقه','معاملات','أسرة','أخلاق']) as $t)
+                @foreach(['عقيدة','فقه','معاملات','أسرة','أخلاق'] as $t)
                   <option>{{ $t }}</option>
                 @endforeach
               </select>
@@ -1908,6 +1908,10 @@ FILE: \resources\views\admin\lectures\index.blade.php
             </label>
           </div>
           <div class="dash-field">
+            <label class="dash-label">نص الدرس <span class="dash-label__optional">(اختياري)</span></label>
+            <textarea class="dash-textarea" rows="4" placeholder="نص الدرس أو ملخصه..."></textarea>
+          </div>
+          <div class="dash-field">
             <label class="dash-label">حالة النشر</label>
             <select class="dash-select"><option value="draft">مسودة</option><option value="published">منشور</option></select>
           </div>
@@ -2149,12 +2153,12 @@ FILE: \resources\views\admin\lessons\index.blade.php
                placeholder="ابحث بعنوان الدرس أو المقرر...">
       </div>
       <div class="dash-filter-chips" style="padding:0">
-         as $chip)
-          <button class="dash-filter-chip"
-                  :class="filterStatus==='{{ $chip }}' ? 'dash-filter-chip--active':''"
-                  @click="filterStatus='{{ $chip }}'">{{ $chip }}</button>
-        @endforeach
-      </div>
+  @foreach(['الكل','منشور','مسودة'] as $chip)
+    <button class="dash-filter-chip"
+            :class="filterStatus==='{{ $chip }}' ? 'dash-filter-chip--active':''"
+            @click="filterStatus='{{ $chip }}'">{{ $chip }}</button>
+  @endforeach
+</div>
       <span class="dash-table-count" style="margin-right:auto">إجمالي: <strong>٢٠٤٨</strong> درساً</span>
     </div>
 
@@ -2645,6 +2649,10 @@ FILE: \resources\views\admin\refutations\index.blade.php
               <span class="dash-file-upload__label">اسحب ملف MP3 أو انقر للاختيار</span>
               <input type="file" accept="audio/*" style="display:none">
             </label>
+          </div>
+          <div class="dash-field">
+            <label class="dash-label">نص الدرس <span class="dash-label__optional">(اختياري)</span></label>
+            <textarea class="dash-textarea" rows="4" placeholder="نص الدرس أو ملخصه..."></textarea>
           </div>
           <div class="dash-field__row">
             <div class="dash-field">

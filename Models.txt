@@ -294,21 +294,31 @@ class LectureGroup extends Model {
     use HasUuids, SoftDeletes, Auditable;
 
     protected $fillable = [
-        'title', 'slug', 'scholar_id', 'category_id',
-        'is_multi_part', 'status', 'created_by'
+        'title',
+        'slug',
+        'description',
+        'scholar_id',
+        'category_id',
+        'is_multi_part',
+        'total_parts',
+        'status',
+        'created_by',
     ];
 
     protected $casts = ['is_multi_part' => 'boolean'];
 
-    public function scholar() { return $this->belongsTo(Scholar::class); }
+    public function scholar()  { return $this->belongsTo(Scholar::class); }
+    public function category() { return $this->belongsTo(Category::class); }
 
     public function parts() {
         return $this->hasMany(Lesson::class, 'parent_id')
                     ->where('type', 'lecture')
+                    ->orderBy('part_number')
                     ->orderBy('sort_order');
     }
-}
 
+    public function scopePublished($q) { return $q->where('status', 'published'); }
+}
 
 
 
@@ -326,17 +336,34 @@ use App\Traits\Auditable;
 
 class Lesson extends Model {
     use HasUuids, SoftDeletes, Auditable;
+
     protected $fillable = [
-        'type','parent_id','scholar_id','category_id','title','slug','body',
-        'audio_path','audio_url','audio_duration','sort_order','status',
-        'listen_count','created_by','updated_by'
+        'type',
+        'parent_id',
+        'scholar_id',
+        'category_id',
+        'title',
+        'slug',
+        'body',
+        'audio_path',
+        'audio_url',
+        'audio_duration',
+        'sort_order',
+        'part_number',
+        'status',
+        'listen_count',
+        'created_by',
+        'updated_by',
     ];
+
     public function scholar()          { return $this->belongsTo(Scholar::class); }
     public function category()         { return $this->belongsTo(Category::class); }
     public function curriculum()       { return $this->belongsTo(Curriculum::class, 'parent_id'); }
+    public function lectureGroup()     { return $this->belongsTo(LectureGroup::class, 'parent_id'); }
     public function sermonDetail()     { return $this->hasOne(SermonDetail::class); }
     public function refutationDetail() { return $this->hasOne(RefutationDetail::class); }
     public function createdBy()        { return $this->belongsTo(AdminUser::class, 'created_by'); }
+
     public function scopePublished($q)         { return $q->where('status', 'published'); }
     public function scopeOfType($q, string $t) { return $q->where('type', $t); }
 }
@@ -357,16 +384,24 @@ class RefutationDetail extends Model {
     use HasUuids;
 
     protected $fillable = [
-        'lesson_id', 'refutation_type', 'approval_status',
-        'reviewed_by', 'review_note', 'reviewed_at'
+        'lesson_id',
+        'refutation_type',   // bida | deviant_sect | shubhat | atheism | contemporary
+        'approval_status',   // pending | approved | rejected
+        'reviewed_by',
+        'review_note',
+        'rejection_reason',
+        'reviewed_at',
     ];
 
     protected $casts = ['reviewed_at' => 'datetime'];
 
     public function lesson()     { return $this->belongsTo(Lesson::class); }
     public function reviewedBy() { return $this->belongsTo(AdminUser::class, 'reviewed_by'); }
-}
 
+    public function scopePending($q)  { return $q->where('approval_status', 'pending'); }
+    public function scopeApproved($q) { return $q->where('approval_status', 'approved'); }
+    public function scopeRejected($q) { return $q->where('approval_status', 'rejected'); }
+}
 
 
 
