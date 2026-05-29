@@ -80,6 +80,10 @@
             </label>
           </div>
           <div class="dash-field">
+            <label class="dash-label">نص الدرس <span class="dash-label__optional">(اختياري)</span></label>
+            <textarea class="dash-textarea" rows="4" placeholder="نص الدرس أو ملخصه..."></textarea>
+          </div>
+          <div class="dash-field">
             <label class="dash-label">حالة النشر</label>
             <select class="dash-select"><option value="draft">مسودة</option><option value="published">منشور</option></select>
           </div>

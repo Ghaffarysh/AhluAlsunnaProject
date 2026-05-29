@@ -66,6 +66,10 @@
               <input type="file" accept="audio/*" style="display:none">
             </label>
           </div>
+          <div class="dash-field">
+            <label class="dash-label">نص الدرس <span class="dash-label__optional">(اختياري)</span></label>
+            <textarea class="dash-textarea" rows="4" placeholder="نص الدرس أو ملخصه..."></textarea>
+          </div>
           <div class="dash-field__row">
             <div class="dash-field">
               <label class="dash-label">حالة الاعتماد</label>
